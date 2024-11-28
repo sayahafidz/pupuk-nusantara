@@ -55,7 +55,7 @@
                             <rect x="10.5562" y="-0.556152" width="28" height="4" rx="2"
                                 transform="rotate(45 10.5562 -0.556152)" fill="currentColor"></rect>
                         </svg>
-                        <h5 class="logo-title">{{ env('APP_NAME') }}</h5>
+                        <h6 class="logo-title">{{ env('APP_NAME') }}</h6>
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbar-2" aria-controls="navbar-2" aria-expanded="false"
@@ -79,7 +79,7 @@
                                     Landing pages
                                 </a>
                             </li>
-                            <li class="nav-item me-3">
+                            {{-- <li class="nav-item me-3">
                                 <a class="btn btn-primary d-flex align-items-center" aria-current="page"
                                     href="https://templates.iqonic.design/product/hope-ui/pro/laravel/public/dashboards"
                                     target="_blank">
@@ -95,7 +95,7 @@
                                     </svg>
                                     Go Pro
                                 </a>
-                            </li>
+                            </li> --}}
                             <li class="nav-item">
                                 <a class="btn btn-success" aria-current="page"
                                     href="https://iqonic.design/product/admin-templates/hope-ui-free-open-source-laravel-admin-panel/"

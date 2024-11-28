@@ -1,3 +1,5 @@
+
+{{-- this code is to enable and disable the sidebard --}}
 <div id="loading">
     @include('partials.dashboard._body_loader')
 </div>
