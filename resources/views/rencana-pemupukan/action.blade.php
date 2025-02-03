@@ -1,6 +1,6 @@
-<div class="flex align-items-center list-jenis-pupuk-action">
-    <a class="btn btn-sm btn-icon btn-warning" data-bs-toggle="tooltip" title="Edit Jenis Pupuk"
-        href="{{ route('jenis-pupuk.edit', $id) }}">
+<div class="flex align-items-center list-pemupukan-action">
+    <a class="btn btn-sm btn-icon btn-warning" data-bs-toggle="tooltip" title="Edit Rencana Pemupukan"
+        href="{{ route('rencana-pemupukan.edit', $id) }}">
         <span class="btn-inner">
             <svg width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -16,10 +16,11 @@
     </a>
     @if (auth()->user()->hasRole('admin') && auth()->id() !== $id)
         <?php
-        $message = __('global-message.delete_alert', ['form' => __('Jenis Pupuk List')]);
+        $message = __('global-message.delete_alert', ['form' => __('Rencana Pemupukan List')]);
         ?>
-        <button class="btn btn-sm btn-icon btn-danger delete-jenis-pupuk" data-id="{{ $id }}"
-            data-message="{{ $message }}" data-bs-toggle="tooltip" title="Delete Jenis Pupuk">
+        <a class="btn btn-sm btn-icon btn-danger"
+            onclick="deleteRencanaPemupukan('{{ route('rencana-pemupukan.destroy', $id) }}', '{{ $id }}')"
+            data-bs-toggle="tooltip" title="Delete Rencana Pemupukan">
             <span class="btn-inner">
                 <svg width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                     stroke="currentColor">
@@ -33,71 +34,57 @@
                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                 </svg>
             </span>
-            </a>
-        </button>
-        <form action="{{ route('jenis-pupuk.destroy', $id) }}" id="jenis-pupuk-delete-{{ $id }}"
-            method="post">
+        </a>
+
+
+
+        <form action="{{ route('rencana-pemupukan.destroy', $id) }}" id="rencana-pemupukan-delete-{{ $id }}" method="post">
             @method('delete')
             @csrf
         </form>
-    @endif
 
-
-    <script>
-        $(document).on('click', '.delete-jenis-pupuk', function(e) {
-            e.preventDefault();
-
-            let id = $(this).data('id');
-            let message = $(this).data('message') || 'Are you sure you want to delete this record?';
-
-            // Show SweetAlert2 confirmation dialog
-            Swal.fire({
-                title: 'Confirm Deletion',
-                text: message,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel',
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Make AJAX request to delete the record
-                    $.ajax({
-                        url: `{{ route('jenis-pupuk.index') }}/${id}`,
-                        type: 'DELETE',
-                        data: {
-                            _token: '{{ csrf_token() }}',
-                        },
-                        success: function(response) {
-                            if (response.success) {
+        <script>
+            function deleteRencanaPemupukan(url, id) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Make the AJAX request
+                        $.ajax({
+                            url: url,
+                            type: 'DELETE',
+                            data: {
+                                _token: '{{ csrf_token() }}' // CSRF token for Laravel
+                            },
+                            success: function(response) {
+                                // Show success message
                                 Swal.fire(
                                     'Deleted!',
-                                    response.message || 'Record has been deleted.',
+                                    response.message,
                                     'success'
                                 );
-
-                                // Reload the DataTable
-                                $('#jenis-pupuk-datatable').DataTable().ajax.reload();
-                            } else {
+                                // Reload the data table
+                                $('#dataTable').DataTable().ajax.reload();
+                            },
+                            error: function(xhr) {
+                                // Handle error response
                                 Swal.fire(
                                     'Error!',
-                                    response.error || 'Error deleting record.',
+                                    'There was a problem deleting the record.',
                                     'error'
                                 );
                             }
-                        },
-                        error: function(xhr) {
-                            Swal.fire(
-                                'Error!',
-                                xhr.responseText || 'An unexpected error occurred.',
-                                'error'
-                            );
-                        },
-                    });
-                }
-            });
-        });
-    </script>
-
+                        });
+                    }
+                });
+            }
+        </script>
+    @endif
 </div>

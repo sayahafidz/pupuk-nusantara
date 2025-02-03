@@ -9,6 +9,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.1",
+        "dompdf/dompdf": "^3.0",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^10.0",
         "laravel/sanctum": "^3.2",
@@ -16,6 +17,7 @@
         "laravel/tinker": "^2.8",
         "laravelcollective/html": "^6.2",
         "lavary/laravel-menu": "^1.8",
+        "maatwebsite/excel": "^3.1",
         "nwidart/laravel-modules": "^10.0",
         "spatie/laravel-medialibrary": "^10.0.0",
         "spatie/laravel-permission": "^5.8",

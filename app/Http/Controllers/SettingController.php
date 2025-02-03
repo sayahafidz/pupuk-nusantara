@@ -2,26 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\JenisPupukDataTable;
-use App\Models\JenisPupuk;
-use App\Http\Requests\JenisPupukRequest;
+use App\DataTables\SettingDataTable;
+use App\Http\Requests\SettingRequest;
+use App\Models\Settings;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class JenisPupukController extends Controller
+class SettingController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @param JenisPupukDataTable $dataTable
+     * @param SettingDataTable $dataTable
      * @return \Illuminate\Http\Response
      */
-    public function index(JenisPupukDataTable $dataTable)
+    public function index(SettingDataTable $dataTable)
     {
-        $pageTitle = trans('global-message.list_form_title', ['form' => trans('Jenis Pupuk')]);
+        $pageTitle = trans('global-message.list_form_title', ['form' => trans('Setting')]);
         $assets = ['data-table'];
-        $headerAction = '<a href="' . route('jenis-pupuk.create') . '" class="btn btn-sm btn-primary" role="button">Add Jenis Pupuk</a>'
-            . ' <a href="' . route('upload-data.upload') . '" class="btn btn-sm btn-success" role="button">Upload Jenis Pupuk File</a>';
+        $headerAction = '<a href="' . route('setting.create') . '" class="btn btn-sm btn-primary" role="button">Add Setting</a>';
+
         return $dataTable->render('global.datatable', compact('pageTitle', 'assets', 'headerAction'));
     }
 
@@ -32,29 +33,30 @@ class JenisPupukController extends Controller
      */
     public function create()
     {
-        return view('jenis-pupuk.form');
+        $users = User::orderBy('first_name', 'asc')->pluck('first_name', 'id');
+        return view('setting.form', compact('users'));
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param JenisPupukRequest $request
+     * @param SettingRequest $request
      * @return \Illuminate\Http\Response
      */
-    public function store(JenisPupukRequest $request)
+    public function store(SettingRequest $request)
     {
         try {
             // Validate the request data
             $data = $request->validated();
 
             // Create a new record in the database
-            JenisPupuk::create($data);
+            Settings::create($data);
 
             // Redirect to index with a success message
-            return redirect()->route('jenis-pupuk.index')->withSuccess(__('Berhasil menambahkan Jenis Pupuk.'));
+            return redirect()->route('setting.index')->withSuccess(__('Berhasil menambahkan Setting.'));
         } catch (\Exception $e) {
             // Log the error details
-            Log::error('Error storing Jenis Pupuk: ' . $e->getMessage(), [
+            Log::error('Error storing Setting: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'input' => $request->all(),
             ]);
@@ -64,7 +66,6 @@ class JenisPupukController extends Controller
         }
     }
 
-
     /**
      * Display the specified resource.
      *
@@ -73,8 +74,8 @@ class JenisPupukController extends Controller
      */
     public function show($id)
     {
-        $data = JenisPupuk::findOrFail($id);
-        return view('jenis-pupuk.show', compact('data'));
+        $data = Settings::findOrFail($id);
+        return view('setting.show', compact('data'));
     }
 
     /**
@@ -85,28 +86,31 @@ class JenisPupukController extends Controller
      */
     public function edit($id)
     {
-        $data = JenisPupuk::findOrFail($id);
-        return view('jenis-pupuk.form', compact('data', 'id'));
+        $data = Settings::findOrFail($id);
+        return view('setting.form', compact('data', 'id'));
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param JenisPupukRequest $request
+     * @param SettingRequest $request
      * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function update(JenisPupukRequest $request, $id)
+    public function update(SettingRequest $request, $id)
     {
         try {
             $data = $request->validated();
-            $jenisPupuk = JenisPupuk::findOrFail($id);
-            $jenisPupuk->update($data);
+            $setting = Settings::findOrFail($id);
+            $setting->update($data);
 
-            return redirect()->route('jenis-pupuk.index')->withSuccess(__('Berhasil Mengupdate Jenis Pupuk Data', ['name' => __('Jenis Pupuk')]));
+            return redirect()->route('setting.index')->withSuccess(__('Berhasil mengupdate Setting.'));
         } catch (\Exception $e) {
-            Log::error('Error updating Jenis Pupuk: ' . $e->getMessage());
-            return redirect()->back()->withError(__('Gagal Mengupdate Jenis Pupuk Data', ['name' => __('Jenis Pupuk')]));
+            Log::error('Error updating Setting: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'input' => $request->all(),
+            ]);
+            return redirect()->back()->withError(__('Terjadi kesalahan saat mengupdate Setting. Silakan coba lagi.'));
         }
     }
 
@@ -119,26 +123,22 @@ class JenisPupukController extends Controller
     public function destroy($id)
     {
         try {
-            $jenisPupuk = JenisPupuk::findOrFail($id);
-            $jenisPupuk->delete();
+            $setting = Settings::findOrFail($id);
+            $setting->delete();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Record deleted successfully!',
             ]);
         } catch (\Exception $e) {
+            Log::error('Error deleting Setting: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to delete record.',
             ], 500);
         }
-    }
-
-
-    public function getJenisPupuk()
-    {
-        // Fetch the detail data for the selected blok
-        $detail = JenisPupuk::pluck('nama_pupuk');
-        return response()->json($detail);
     }
 }

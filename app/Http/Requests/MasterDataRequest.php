@@ -43,6 +43,7 @@ class MasterDataRequest extends FormRequest
                     'luas' => 'required|numeric|min:0',
                     'jlh_pokok' => 'required|integer|min:0',
                     'pkk_ha' => 'required|numeric|min:0',
+                    'rpc' => 'nullable|string|max:255',
                 ];
                 break;
 
@@ -59,6 +60,7 @@ class MasterDataRequest extends FormRequest
                     'luas' => 'sometimes|required|numeric|min:0',
                     'jlh_pokok' => 'sometimes|required|integer|min:0',
                     'pkk_ha' => 'sometimes|required|numeric|min:0',
+                    'rpc' => 'nullable|string|max:255',
                 ];
                 break;
         }
@@ -84,6 +86,7 @@ class MasterDataRequest extends FormRequest
             'luas.required' => 'Luas is required.',
             'jlh_pokok.required' => 'Jumlah pokok is required.',
             'pkk_ha.required' => 'PKK/Ha is required.',
+            'rpc.required' => 'RPC is required.',
         ];
     }
 

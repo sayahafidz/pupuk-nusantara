@@ -191,6 +191,7 @@ class MasterDataController extends Controller
             'luas',
             'jlh_pokok',
             'pkk_ha',
+            'RPC',
         ];
 
         $batchData = [];
@@ -215,4 +216,6 @@ class MasterDataController extends Controller
 
         return response()->json(['message' => 'Data imported and saved successfully!']);
     }
+
+    
 }

@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('jenis_pupuk', function (Blueprint $table) {
-            // $table->id();
-            $table->string('kode_pupuk');
-            $table->string('nama_pupuk');
-            $table->string('jenis_pupuk');
-            $table->string('harga')->nullable();
-            $table->string('stok');
+        Schema::create('whatsapp', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('phone');
+            $table->string('status');
+            $table->string('user_id');
             $table->timestamps();
             $table->softDeletes();
         });
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pupuk');
+        Schema::dropIfExists('whatsapp');
     }
 };

@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('jenis_pupuk', function (Blueprint $table) {
-            // $table->id();
-            $table->string('kode_pupuk');
-            $table->string('nama_pupuk');
-            $table->string('jenis_pupuk');
-            $table->string('harga')->nullable();
-            $table->string('stok');
+        // add new setting for the app
+        Schema::create('settings', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('value');
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pupuk');
+        Schema::dropIfExists('settings');
     }
 };

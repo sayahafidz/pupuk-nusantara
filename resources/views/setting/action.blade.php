@@ -1,6 +1,6 @@
-<div class="flex align-items-center list-jenis-pupuk-action">
-    <a class="btn btn-sm btn-icon btn-warning" data-bs-toggle="tooltip" title="Edit Jenis Pupuk"
-        href="{{ route('jenis-pupuk.edit', $id) }}">
+<div class="flex align-items-center list-pemupukan-action">
+    <a class="btn btn-sm btn-icon btn-warning" data-bs-toggle="tooltip" title="Edit Setting"
+        href="{{ route('setting.edit', $id) }}">
         <span class="btn-inner">
             <svg width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -16,10 +16,10 @@
     </a>
     @if (auth()->user()->hasRole('admin') && auth()->id() !== $id)
         <?php
-        $message = __('global-message.delete_alert', ['form' => __('Jenis Pupuk List')]);
+        $message = __('global-message.delete_alert', ['form' => __('Setting List')]);
         ?>
-        <button class="btn btn-sm btn-icon btn-danger delete-jenis-pupuk" data-id="{{ $id }}"
-            data-message="{{ $message }}" data-bs-toggle="tooltip" title="Delete Jenis Pupuk">
+        <button class="btn btn-sm btn-icon btn-danger delete-setting" data-id="{{ $id }}"
+            data-message="{{ $message }}" data-bs-toggle="tooltip" title="Delete Setting">
             <span class="btn-inner">
                 <svg width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                     stroke="currentColor">
@@ -33,18 +33,15 @@
                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                 </svg>
             </span>
-            </a>
         </button>
-        <form action="{{ route('jenis-pupuk.destroy', $id) }}" id="jenis-pupuk-delete-{{ $id }}"
-            method="post">
+        <form action="{{ route('setting.destroy', $id) }}" id="setting-delete-{{ $id }}" method="post">
             @method('delete')
             @csrf
         </form>
     @endif
 
-
     <script>
-        $(document).on('click', '.delete-jenis-pupuk', function(e) {
+        $(document).on('click', '.delete-setting', function(e) {
             e.preventDefault();
 
             let id = $(this).data('id');
@@ -64,7 +61,7 @@
                 if (result.isConfirmed) {
                     // Make AJAX request to delete the record
                     $.ajax({
-                        url: `{{ route('jenis-pupuk.index') }}/${id}`,
+                        url: `{{ route('setting.index') }}/${id}`,
                         type: 'DELETE',
                         data: {
                             _token: '{{ csrf_token() }}',
@@ -78,7 +75,7 @@
                                 );
 
                                 // Reload the DataTable
-                                $('#jenis-pupuk-datatable').DataTable().ajax.reload();
+                                $('#setting-datatable').DataTable().ajax.reload();
                             } else {
                                 Swal.fire(
                                     'Error!',
@@ -99,5 +96,4 @@
             });
         });
     </script>
-
 </div>

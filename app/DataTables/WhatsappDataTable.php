@@ -2,12 +2,12 @@
 
 namespace App\DataTables;
 
-use App\Models\MasterData;
+use App\Models\Whatsapp;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Services\DataTable;
 
-class MasterDataTable extends DataTable
+class WhatsappDataTable extends DataTable
 {
     /**
      * Build DataTable class.
@@ -19,7 +19,7 @@ class MasterDataTable extends DataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('action', 'master-data.action')
+            ->addColumn('action', 'whatsapp.action')
             ->rawColumns(['action', 'status']);
     }
 
@@ -31,7 +31,7 @@ class MasterDataTable extends DataTable
      */
     public function query()
     {
-        $model = MasterData::query();
+        $model = Whatsapp::query();
         return $this->applyScopes($model);
     }
 
@@ -43,7 +43,7 @@ class MasterDataTable extends DataTable
     public function html()
     {
         return $this->builder()
-            ->setTableId('dataTable')
+            ->setTableId('whatsapp-datatable')
             ->columns($this->getColumns())
             ->minifiedAjax()
             ->dom('<"row align-items-center"<"col-md-2" l><"col-md-6" B><"col-md-4"f>><"table-responsive my-3" rt><"row align-items-center" <"col-md-6" i><"col-md-6" p>><"clear">')
@@ -63,18 +63,9 @@ class MasterDataTable extends DataTable
     {
         return [
             ['data' => 'id', 'name' => 'id', 'title' => 'id'],
-            ['data' => 'kondisi', 'name' => 'kondisi', 'title' => 'Kondisi', 'orderable' => false],
-            ['data' => 'status_umur', 'name' => 'status_umur', 'title' => 'Status Umur'],
-            ['data' => 'rpc', 'name' => 'rpc', 'title' => 'RPC'],
-            ['data' => 'kode_kebun', 'name' => 'kode_kebun', 'title' => 'Kode Kebun'],
-            ['data' => 'nama_kebun', 'name' => 'nama_kebun', 'title' => 'Nama Kebun'],
-            ['data' => 'kkl_kebun', 'name' => 'kkl_kebun', 'title' => 'KKL Kebun'],
-            ['data' => 'afdeling', 'name' => 'afdeling', 'title' => 'Afdeling'],
-            ['data' => 'tahun_tanam', 'name' => 'tahun_tanam', 'title' => 'Tahun Tanam'],
-            ['data' => 'no_blok', 'name' => 'no_blok', 'title' => 'No Blok'],
-            ['data' => 'luas', 'name' => 'luas', 'title' => 'Luas (Ha)'],
-            ['data' => 'jlh_pokok', 'name' => 'jlh_pokok', 'title' => 'Jumlah Pokok'],
-            ['data' => 'pkk_ha', 'name' => 'pkk_ha', 'title' => 'Pokok/Ha'],
+            ['data' => 'name', 'name' => 'name', 'title' => 'Nama', 'orderable' => false],
+            ['data' => 'phone', 'name' => 'phone', 'title' => 'Nomor Whatsapp'],
+            ['data' => 'status', 'name' => 'status', 'title' => 'Status'],
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

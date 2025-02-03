@@ -17,7 +17,8 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    public const HOME = '/dashboard';
+    // public const HOME = '/chart-pemupukan'; // ini adalah route yang akan diarahkan setelah login
+    public const HOME = '/dashboard'; // this is the default value
 
 
     /**

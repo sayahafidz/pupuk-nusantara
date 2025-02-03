@@ -18,11 +18,11 @@ class UserController extends Controller
      */
     public function index(UsersDataTable $dataTable)
     {
-        $pageTitle = trans('global-message.list_form_title',['form' => trans('users.title')] );
+        $pageTitle = trans('global-message.list_form_title', ['form' => trans('users.title')]);
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
-        $headerAction = '<a href="'.route('users.create').'" class="btn btn-sm btn-primary" role="button">Add User</a>';
-        return $dataTable->render('global.datatable', compact('pageTitle','auth_user','assets', 'headerAction'));
+        $headerAction = '<a href="' . route('users.create') . '" class="btn btn-sm btn-primary" role="button">Add User</a>';
+        return $dataTable->render('global.datatable', compact('pageTitle', 'auth_user', 'assets', 'headerAction'));
     }
 
     /**
@@ -32,7 +32,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        $roles = Role::where('status',1)->get()->pluck('title', 'id');
+        $roles = Role::where('status', 1)->get()->pluck('title', 'id');
 
         return view('users.form', compact('roles'));
     }
@@ -47,18 +47,18 @@ class UserController extends Controller
     {
         $request['password'] = bcrypt($request->password);
 
-        $request['username'] = $request->username ?? stristr($request->email, "@", true) . rand(100,1000);
+        $request['username'] = $request->username ?? stristr($request->email, "@", true) . rand(100, 1000);
 
         $user = User::create($request->all());
 
-        storeMediaFile($user,$request->profile_image, 'profile_image');
+        storeMediaFile($user, $request->profile_image, 'profile_image');
 
         $user->assignRole('user');
 
         // Save user Profile data...
         $user->userProfile()->create($request->userProfile);
 
-        return redirect()->route('users.index')->withSuccess(__('message.msg_added',['name' => __('users.store')]));
+        return redirect()->route('users.index')->withSuccess(__('message.msg_added', ['name' => __('users.store')]));
     }
 
     /**
@@ -69,7 +69,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $data = User::with('userProfile','roles')->findOrFail($id);
+        $data = User::with('userProfile', 'roles')->findOrFail($id);
 
         $profileImage = getSingleMedia($data, 'profile_image');
 
@@ -84,15 +84,15 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        $data = User::with('userProfile','roles')->findOrFail($id);
+        $data = User::with('userProfile', 'roles')->findOrFail($id);
 
         $data['user_type'] = $data->roles->pluck('id')[0] ?? null;
 
-        $roles = Role::where('status',1)->get()->pluck('title', 'id');
+        $roles = Role::where('status', 1)->get()->pluck('title', 'id');
 
         $profileImage = getSingleMedia($data, 'profile_image');
 
-        return view('users.form', compact('data','id', 'roles', 'profileImage'));
+        return view('users.form', compact('data', 'id', 'roles', 'profileImage'));
     }
 
     /**
@@ -108,8 +108,8 @@ class UserController extends Controller
         $user = User::with('userProfile')->findOrFail($id);
 
         $role = Role::find($request->user_role);
-        if(env('IS_DEMO')) {
-            if($role->name === 'admin'&& $user->user_type === 'admin') {
+        if (env('IS_DEMO')) {
+            if ($role->name === 'admin' && $user->user_type === 'admin') {
                 return redirect()->back()->with('error', 'Permission denied');
             }
         }
@@ -129,11 +129,10 @@ class UserController extends Controller
         // user profile data....
         $user->userProfile->fill($request->userProfile)->update();
 
-        if(auth()->check()){
-            return redirect()->route('users.index')->withSuccess(__('message.msg_updated',['name' => __('message.user')]));
+        if (auth()->check()) {
+            return redirect()->route('users.index')->withSuccess(__('message.msg_updated', ['name' => __('message.user')]));
         }
-        return redirect()->back()->withSuccess(__('message.msg_updated',['name' => 'My Profile']));
-
+        return redirect()->back()->withSuccess(__('message.msg_updated', ['name' => 'My Profile']));
     }
 
     /**
@@ -146,19 +145,24 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $status = 'errors';
-        $message= __('global-message.delete_form', ['form' => __('users.title')]);
+        $message = __('global-message.delete_form', ['form' => __('users.title')]);
 
-        if($user!='') {
+        if ($user != '') {
             $user->delete();
             $status = 'success';
-            $message= __('global-message.delete_form', ['form' => __('users.title')]);
+            $message = __('global-message.delete_form', ['form' => __('users.title')]);
         }
 
-        if(request()->ajax()) {
+        if (request()->ajax()) {
             return response()->json(['status' => true, 'message' => $message, 'datatable_reload' => 'dataTable_wrapper']);
         }
 
-        return redirect()->back()->with($status,$message);
+        return redirect()->back()->with($status, $message);
+    }
 
+    public function getUsers()
+    {
+        $users = User::select('id', 'first_name')->get();
+        return response()->json($users);
     }
 }

@@ -10,39 +10,59 @@
                 <div class="card-body">
                     <!-- Dropdown filters -->
                     <div class="row mb-3">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="regionalSelect">Regional</label>
-                            <select id="regionalSelect" class="form-control">
-                                <option value="">All</option>
-                                <option value="regional1">Regional 1</option>
-                                <option value="regional2">Regional 2</option>
+                            <select class="form-control" id="regionalSelect" required name="regional">
+                                <option selected disabled value="">All</option>
+                                @foreach ($regions as $region)
+                                    <option value="{{ $region }}">{{ $region }}</option>
+                                @endforeach
                             </select>
+
                         </div>
-                        <div class="col-md-3">
+
+                        <div class="col-md-2">
                             <label for="kebunSelect">Kebun</label>
-                            <select id="kebunSelect" class="form-control" disabled>
+                            <select id="kebunSelect" class="form-control">
                                 <option value="">All</option>
-                                <option value="kebun1">Kebun 1</option>
-                                <option value="kebun2">Kebun 2</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="afdelingSelect">Afdeling</label>
-                            <select id="afdelingSelect" class="form-control" disabled>
+                            <select id="afdelingSelect" class="form-control">
                                 <option value="">All</option>
-                                <option value="afdeling1">Afdeling 1</option>
-                                <option value="afdeling2">Afdeling 2</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="tahunTanamSelect">Tahun Tanam</label>
                             <select id="tahunTanamSelect" class="form-control">
                                 <option value="">All</option>
-                                <option value="2005">2005</option>
-                                <option value="2006">2006</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="jenisPupuk">Jenis Pupuk</label>
+                            <select class="form-control" id="jenisPupukSelect" required name="jenisPupuk">
+                                <option selected disabled value="">All</option>
+                                @foreach ($jenisPupuks as $jenisPupuk)
+                                    <option value="{{ $jenisPupuk }}">{{ $jenisPupuk }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
+
+
+                    <!-- Date range inputs -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="fromDate">From</label>
+                            <input type="date" id="fromDate" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="toDate">To</label>
+                            <input type="date" id="toDate" class="form-control">
+                        </div>
+                    </div>
+
 
                     <!-- Highcharts containers -->
                     <div class="row">
@@ -66,6 +86,57 @@
                     <script src="https://code.highcharts.com/highcharts.js"></script>
                     <script type="text/javascript">
                         document.addEventListener('DOMContentLoaded', function() {
+
+
+
+                            document.getElementById('regionalSelect').addEventListener('change', function() {
+                                const regional = this.value;
+                                fetch(`/api/kebun/${regional}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        let kebunOptions = '<option >All</option>';
+                                        data.forEach(kebun => {
+                                            kebunOptions += `<option value="${kebun}">${kebun}</option>`;
+                                        });
+                                        document.getElementById('kebunSelect').innerHTML = kebunOptions;
+                                    });
+                            });
+
+
+                            document.getElementById('kebunSelect').addEventListener('change', function() {
+                                const regional = document.getElementById('regionalSelect').value;
+                                const kebun = this.value;
+                                fetch(`/api/afdeling/${regional}/${kebun}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        let afdelingOptions =
+                                            '<option selected disabled value="">All</option>';
+                                        data.forEach(afdeling => {
+                                            afdelingOptions +=
+                                                `<option value="${afdeling}">${afdeling}</option>`;
+                                        });
+                                        document.getElementById('afdelingSelect').innerHTML = afdelingOptions;
+                                    });
+                            });
+
+                            document.getElementById('afdelingSelect').addEventListener('change', function() {
+                                const regional = document.getElementById('regionalSelect').value;
+                                const kebun = document.getElementById('kebunSelect').value;
+                                const afdeling = this.value;
+                                fetch(`/api/tahuntanam/${regional}/${kebun}/${afdeling}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        let tahuntanamOption = '<option selected disabled value="">All</option>';
+                                        data.forEach(tahuntaman => {
+                                            tahuntanamOption +=
+                                                `<option value="${tahuntaman}">${tahuntaman}</option>`;
+                                        });
+                                        document.getElementById('tahunTanamSelect').innerHTML = tahuntanamOption;
+                                    });
+                            });
+
+
+
                             // Initialize the column chart
                             const columnChart = Highcharts.chart('pupukChart', {
                                 chart: {
@@ -75,7 +146,7 @@
                                     text: 'Rekap Pemupukan'
                                 },
                                 xAxis: {
-                                    categories: ['Tiger Nixon', 'System Architect', 'Edinburgh', 'Afdeling 61']
+                                    categories: []
                                 },
                                 yAxis: {
                                     title: {
@@ -84,10 +155,10 @@
                                 },
                                 series: [{
                                     name: 'Jumlah Pokok',
-                                    data: [320800, 230400, 210700, 180200]
+                                    data: []
                                 }, {
                                     name: 'Luas Blok (Ha)',
-                                    data: [24, 30, 40, 15]
+                                    data: []
                                 }],
                                 credits: {
                                     enabled: false
@@ -103,7 +174,7 @@
                                     text: 'Trend Pemupukan Over Time'
                                 },
                                 xAxis: {
-                                    categories: ['January', 'February', 'March', 'April']
+                                    categories: []
                                 },
                                 yAxis: {
                                     title: {
@@ -112,17 +183,17 @@
                                 },
                                 series: [{
                                     name: 'Jumlah Pokok',
-                                    data: [120000, 150000, 130000, 110000]
+                                    data: []
                                 }, {
                                     name: 'Luas Blok (Ha)',
-                                    data: [22, 25, 30, 20]
+                                    data: []
                                 }],
                                 credits: {
                                     enabled: false
                                 }
                             });
 
-                            // Initialize the first pie chart
+                            // Initialize the pie chart
                             const pieChart1 = Highcharts.chart('pieChart1', {
                                 chart: {
                                     type: 'pie'
@@ -133,19 +204,7 @@
                                 series: [{
                                     name: 'Pemupukan',
                                     colorByPoint: true,
-                                    data: [{
-                                            name: 'Regional 1',
-                                            y: 45
-                                        },
-                                        {
-                                            name: 'Regional 2',
-                                            y: 30
-                                        },
-                                        {
-                                            name: 'Regional 3',
-                                            y: 25
-                                        }
-                                    ]
+                                    data: []
                                 }],
                                 credits: {
                                     enabled: false
@@ -163,67 +222,106 @@
                                 series: [{
                                     name: 'Pemupukan',
                                     colorByPoint: true,
-                                    data: [{
-                                            name: 'Kebun 1',
-                                            y: 40
-                                        },
-                                        {
-                                            name: 'Kebun 2',
-                                            y: 35
-                                        },
-                                        {
-                                            name: 'Kebun 3',
-                                            y: 25
-                                        }
-                                    ]
+                                    data: []
                                 }],
                                 credits: {
                                     enabled: false
                                 }
                             });
 
-                            // Enable/disable dropdowns and reset values
-                            document.getElementById('regionalSelect').addEventListener('change', function() {
-                                const kebunSelect = document.getElementById('kebunSelect');
-                                const afdelingSelect = document.getElementById('afdelingSelect');
 
-                                kebunSelect.disabled = !this.value;
-                                afdelingSelect.disabled = true;
 
-                                kebunSelect.value = '';
-                                afdelingSelect.value = '';
-
-                                updateCharts();
-                            });
-
-                            document.getElementById('kebunSelect').addEventListener('change', function() {
-                                const afdelingSelect = document.getElementById('afdelingSelect');
-                                afdelingSelect.disabled = !this.value;
-                                afdelingSelect.value = '';
-
-                                updateCharts();
-                            });
-
-                            document.getElementById('afdelingSelect').addEventListener('change', updateCharts);
-
-                            // Function to update all charts based on dropdown values
                             function updateCharts() {
                                 const regional = document.getElementById('regionalSelect').value;
                                 const kebun = document.getElementById('kebunSelect').value;
                                 const afdeling = document.getElementById('afdelingSelect').value;
+                                const tahunTanam = document.getElementById('tahunTanamSelect').value;
+                                const jenisPupuk = document.getElementById('jenisPupukSelect').value;
+                                const fromDate = document.getElementById('fromDate').value;
+                                const toDate = document.getElementById('toDate').value;
 
-                                // Fetch or filter data based on regional, kebun, and afdeling
-                                const updatedColumnData = [ /* Adjust column chart data based on filters */ ];
-                                const updatedLineData = [ /* Adjust line chart data based on filters */ ];
-                                const updatedPieData1 = [ /* Adjust pie chart 1 data */ ];
-                                const updatedPieData2 = [ /* Adjust pie chart 2 data */ ];
+                                // Build the URL with only the parameters that have values other than "All"
+                                let url = `/pemupukan/comparison/${regional}`;
 
-                                // Example data update - update actual logic as needed
-                                columnChart.series[0].setData(updatedColumnData);
-                                lineChart.series[0].setData(updatedLineData);
-                                pieChart1.series[0].setData(updatedPieData1);
-                                pieChart2.series[0].setData(updatedPieData2);
+                                // Add filters if they are not empty or "All"
+                                if (kebun && kebun !== 'All') url += `/${kebun}`;
+                                if (afdeling && afdeling !== 'All') url += `/${afdeling}`;
+                                if (tahunTanam && tahunTanam !== 'All') url += `/${tahunTanam}`;
+                                if (jenisPupuk && jenisPupuk !== 'All') url += `/${jenisPupuk}`;
+                                if (fromDate) url += `/${fromDate}`;
+                                if (toDate) url += `/${toDate}`;
+
+                                // Fetch data with the dynamically built URL
+                                fetch(url)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        // Extract data for the charts
+                                        const categories = [];
+                                        const jumlahPokok = [];
+                                        const luasBlok = [];
+                                        const lineCategories = [];
+                                        const lineJumlahPokok = [];
+                                        const lineLuasBlok = [];
+                                        const pieRegionalData = [];
+                                        const pieKebunData = [];
+
+                                        // Loop through the fetched data to populate the chart data
+                                        for (const key in data) {
+                                            const item = data[key];
+                                            if (item.pemupukan) {
+                                                categories.push(`${item.regional} - ${item.kebun}`);
+                                                jumlahPokok.push(item.pemupukan.jumlah_pupuk);
+                                                luasBlok.push(item.pemupukan.luas_blok);
+
+                                                // Prepare line chart data
+                                                lineCategories.push(`${item.regional} - ${item.kebun}`);
+                                                lineJumlahPokok.push(item.pemupukan.jumlah_pupuk);
+                                                lineLuasBlok.push(item.pemupukan.luas_blok);
+
+                                                // Prepare pie chart data for regional
+                                                pieRegionalData.push({
+                                                    name: `${item.regional}`,
+                                                    y: item.pemupukan.jumlah_pupuk,
+                                                });
+
+                                                // Prepare pie chart data for kebun
+                                                pieKebunData.push({
+                                                    name: `${item.kebun}`,
+                                                    y: item.pemupukan.jumlah_pupuk,
+                                                });
+                                            }
+                                        }
+
+                                        // Update column chart
+                                        columnChart.xAxis[0].setCategories(categories);
+                                        columnChart.series[0].setData(jumlahPokok);
+                                        columnChart.series[1].setData(luasBlok);
+
+                                        // Update line chart
+                                        lineChart.xAxis[0].setCategories(lineCategories);
+                                        lineChart.series[0].setData(lineJumlahPokok);
+                                        lineChart.series[1].setData(lineLuasBlok);
+
+                                        // Update pie chart 1
+                                        pieChart1.series[0].setData(pieRegionalData);
+
+                                        // Update pie chart 2
+                                        pieChart2.series[0].setData(pieKebunData);
+                                    });
                             }
+
+                            // Call updateCharts when any of the dropdowns or date inputs change
+                            document.getElementById('regionalSelect').addEventListener('change', updateCharts);
+                            document.getElementById('kebunSelect').addEventListener('change', updateCharts);
+                            document.getElementById('afdelingSelect').addEventListener('change', updateCharts);
+                            document.getElementById('tahunTanamSelect').addEventListener('change', updateCharts);
+                            document.getElementById('jenisPupukSelect').addEventListener('change', updateCharts);
+                            document.getElementById('fromDate').addEventListener('change', updateCharts);
+                            document.getElementById('toDate').addEventListener('change', updateCharts);
+
+                            // Initialize charts on page load
+                            updateCharts();
+
                         });
                     </script>
                 </div>

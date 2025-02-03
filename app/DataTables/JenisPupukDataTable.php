@@ -43,16 +43,29 @@ class JenisPupukDataTable extends DataTable
     public function html()
     {
         return $this->builder()
-            ->setTableId('dataTable')
+            ->setTableId('jenis-pupuk-datatable') // Unique ID for the table
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->ajax([
+                'url' => route('jenis-pupuk.index'), // Route to fetch data
+                'type' => 'GET', // HTTP method
+            ])
             ->dom('<"row align-items-center"<"col-md-2" l><"col-md-6" B><"col-md-4"f>><"table-responsive my-3" rt><"row align-items-center" <"col-md-6" i><"col-md-6" p>><"clear">')
-
             ->parameters([
-                "processing" => true,
-                "autoWidth" => false,
+                'processing' => true,
+                'serverSide' => true,
+                'autoWidth' => false,
+                'buttons' => [
+                    ['extend' => 'excel', 'className' => 'btn btn-success btn-sm', 'text' => 'Export Excel'],
+                    ['extend' => 'pdf', 'className' => 'btn btn-danger btn-sm', 'text' => 'Export PDF'],
+                ],
+                'order' => [[0, 'asc']], // Default ordering
+                'language' => [
+                    'url' => '//cdn.datatables.net/plug-ins/1.10.25/i18n/English.json',
+                ],
             ]);
     }
+
+
 
     /**
      * Get columns.
@@ -65,7 +78,6 @@ class JenisPupukDataTable extends DataTable
             ['data' => 'id', 'name' => 'id', 'title' => 'id'],
             ['data' => 'kode_pupuk', 'name' => 'kode_pupuk', 'title' => 'Kode Pupuk', 'orderable' => false],
             ['data' => 'nama_pupuk', 'name' => 'nama_pupuk', 'title' => 'Nama Pupuk'],
-            ['data' => 'kode_kebun', 'name' => 'kode_kebun', 'title' => 'Kode Kebun'],
             ['data' => 'jenis_pupuk', 'name' => 'jenis_pupuk', 'title' => 'Jenis Pupuk'],
             ['data' => 'harga', 'name' => 'harga', 'title' => 'Harga'],
             ['data' => 'stok', 'name' => 'stok', 'title' => 'Stok'],

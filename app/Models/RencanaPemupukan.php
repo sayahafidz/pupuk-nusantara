@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Pemupukan extends Model
+class RencanaPemupukan extends Model
 {
     use HasFactory, SoftDeletes;
 
@@ -15,7 +15,7 @@ class Pemupukan extends Model
      *
      * @var string
      */
-    protected $table = 'pemupukan';
+    protected $table = 'rencana_pemupukan';
 
     /**
      * The attributes that are mass assignable.
@@ -33,9 +33,7 @@ class Pemupukan extends Model
         'jumlah_pokok',
         'jenis_pupuk',
         'jumlah_pupuk',
-        'luas_pemupukan',
-        'tgl_pemupukan',
+        'luas_pemupukan', // kilogram pupuk
+        'semester_pemupukan',
     ];
-
-
 }

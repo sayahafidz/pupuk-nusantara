@@ -36,6 +36,7 @@ class MasterData extends Model
         'luas',
         'jlh_pokok',
         'pkk_ha',
+        'rpc',
     ];
 
     public function pemupukan()
