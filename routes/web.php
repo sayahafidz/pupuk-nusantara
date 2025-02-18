@@ -73,8 +73,8 @@ Route::get('/api/users', [UserController::class, 'getUsers']);
 
 
 
+Route::group(['middleware' => ['auth', 'cors']], function () {  
 
-Route::group(['middleware' => 'auth'], function () {
     // Permission Module
     Route::get('/role-permission', [RolePermission::class, 'index'])->name('role.permission.list');
     Route::resource('permission', PermissionController::class);
