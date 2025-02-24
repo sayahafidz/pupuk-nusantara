@@ -2,28 +2,63 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\RencanaRealisasiPemupukanDataTable;
 use App\Helpers\AuthHelper;
-use App\Models\Pemupukan;
+use App\Models\RencanaRealisasiPemupukan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Yajra\DataTables\Facades\DataTables;
 
 class RencanaRealisasiPemupukanController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(RencanaRealisasiPemupukanDataTable $dataTable)
+    public function index()
     {
         $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
 
-        return $dataTable->render('global.datatable-rencana-realisasi', compact(
-            'pageTitle',
-            'auth_user',
-            'assets',
-        ));
+        if (request()->ajax()) {
+            $query = RencanaRealisasiPemupukan::query();
+
+            $model = $query->select([
+                'regional',
+                DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
+                DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
+                DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
+                DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
+                DB::raw("SUM(rencana_total) as rencana_total"),
+                DB::raw("SUM(realisasi_total) as realisasi_total"),
+            ])->groupBy('regional');
+
+            return DataTables::eloquent($model)
+                ->editColumn('rencana_semester_1', fn($row) => number_format($row->rencana_semester_1, 0, ',', '.') . ' Kg')
+                ->editColumn('realisasi_semester_1', fn($row) => number_format($row->realisasi_semester_1, 0, ',', '.') . ' Kg')
+                ->addColumn('percentage_semester_1', fn($row) =>
+                    $row->rencana_semester_1 > 0
+                    ? number_format(($row->realisasi_semester_1 / $row->rencana_semester_1) * 100, 2, ',', '.') . '%'
+                    : '0%'
+                )
+                ->editColumn('rencana_semester_2', fn($row) => number_format($row->rencana_semester_2, 0, ',', '.') . ' Kg')
+                ->editColumn('realisasi_semester_2', fn($row) => number_format($row->realisasi_semester_2, 0, ',', '.') . ' Kg')
+                ->addColumn('percentage_semester_2', fn($row) =>
+                    $row->rencana_semester_2 > 0
+                    ? number_format(($row->realisasi_semester_2 / $row->rencana_semester_2) * 100, 2, ',', '.') . '%'
+                    : '0%'
+                )
+                ->editColumn('rencana_total', fn($row) => number_format($row->rencana_total, 0, ',', '.') . ' Kg')
+                ->editColumn('realisasi_total', fn($row) => number_format($row->realisasi_total, 0, ',', '.') . ' Kg')
+                ->addColumn('percentage_total', fn($row) =>
+                    $row->rencana_total > 0
+                    ? number_format(($row->realisasi_total / $row->rencana_total) * 100, 2, ',', '.') . '%'
+                    : '0%'
+                )
+                ->toJson();
+        }
+
+        return view('global.datatable-rencana-realisasi', compact('pageTitle', 'auth_user', 'assets'));
     }
 
     /**
