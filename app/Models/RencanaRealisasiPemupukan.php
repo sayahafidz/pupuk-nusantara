@@ -4,18 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Pemupukan extends Model
+class RencanaRealisasiPemupukan extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'pemupukan';
+    protected $table = 'rencana_realisasi_pemupukan';
 
     /**
      * The attributes that are mass assignable.
@@ -23,21 +22,16 @@ class Pemupukan extends Model
      * @var array
      */
     protected $fillable = [
-        'id_pupuk',
         'regional',
         'kebun',
         'afdeling',
-        'blok',
         'tahun_tanam',
-        'luas_blok',
-        'jumlah_pokok',
         'jenis_pupuk',
-        'jumlah_pupuk',
-        'luas_pemupukan',
-        'tgl_pemupukan',
-        'cara_pemupukan',
-        'jumlah_mekanisasi',
-        'plant',
+        'rencana_semester_1',
+        'realisasi_semester_1',
+        'rencana_semester_2',
+        'realisasi_semester_2',
+        'rencana_total',
+        'realisasi_total',
     ];
-
 }

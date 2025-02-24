@@ -17,7 +17,7 @@
                                     </div>
                                     <div class="progress-detail">
                                         <p class="mb-2">Total Rencana</p>
-                                        <h4 class="counter" style="visibility: visible;">26.045</h4>
+                                        <h4 class="counter" style="visibility: visible;">{{ number_format($rencana_pemupukan, 0, ',', '.') }}</h4>
                                     </div>
                                 </div>
                             </div>
@@ -35,7 +35,7 @@
                                     </div>
                                     <div class="progress-detail">
                                         <p class="mb-2">Total Realisasi</p>
-                                        <h4 class="counter">11.034</h4>
+                                        <h4 class="counter">{{ number_format($pemupukan, 0, ',', '.') }}</h4>
                                     </div>
                                 </div>
                             </div>
@@ -53,7 +53,7 @@
                                     </div>
                                     <div class="progress-detail">
                                         <p class="mb-2">Jumlah Pupuk</p>
-                                        <h4 class="counter">7</h4>
+                                        <h4 class="counter"><?= $jenis_pupuk ?></h4>
                                     </div>
                                 </div>
                             </div>
@@ -71,7 +71,7 @@
                                     </div>
                                     <div class="progress-detail">
                                         <p class="mb-2">Persentasi Realisasi</p>
-                                        <h4 class="counter">60%</h4>
+                                        <h4 class="counter">{{ number_format($percentage_pemupukan, 2) }}%</h4>
                                     </div>
                                 </div>
                             </div>
@@ -89,7 +89,7 @@
                                     </div>
                                     <div class="progress-detail">
                                         <p class="mb-2">Total User</p>
-                                        <h4 class="counter">738</h4>
+                                        <h4 class="counter"><?= $users ?></h4>
                                     </div>
                                 </div>
                             </div>
@@ -107,7 +107,7 @@
                                     </div>
                                     <div class="progress-detail">
                                         <p class="mb-2">Jumlah Pemupukan</p>
-                                        <h4 class="counter">30753 Kg</h4>
+                                        <h4 class="counter">{{ number_format($jumlah_pupuk, 0, ',', '.') }} Kg</h4>
                                     </div>
                                 </div>
                             </div>

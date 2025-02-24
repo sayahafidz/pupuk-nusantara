@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\DataTables\UsersDataTable;
-use App\Models\User;
 use App\Helpers\AuthHelper;
-use Spatie\Permission\Models\Role;
 use App\Http\Requests\UserRequest;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -58,7 +58,7 @@ class UserController extends Controller
         // Save user Profile data...
         $user->userProfile()->create($request->userProfile);
 
-        return redirect()->route('users.index')->withSuccess(__('message.msg_added', ['name' => __('users.store')]));
+        return redirect()->route('users.index')->withSuccess(__('Data Berhasil Di Tambahkan', ['name' => __('users.store')]));
     }
 
     /**
@@ -104,7 +104,6 @@ class UserController extends Controller
      */
     public function update(UserRequest $request, $id)
     {
-        // dd($request->all());
         $user = User::with('userProfile')->findOrFail($id);
 
         $role = Role::find($request->user_role);
@@ -115,24 +114,23 @@ class UserController extends Controller
         }
         $user->assignRole($role->name);
 
+        // Update password only if provided
         $request['password'] = $request->password != '' ? bcrypt($request->password) : $user->password;
 
-        // User user data...
+        // Update user data
         $user->fill($request->all())->update();
 
-        // Save user image...
+        // Save user image if provided
         if (isset($request->profile_image) && $request->profile_image != null) {
             $user->clearMediaCollection('profile_image');
             $user->addMediaFromRequest('profile_image')->toMediaCollection('profile_image');
         }
 
-        // user profile data....
-        $user->userProfile->fill($request->userProfile)->update();
-
+        // Redirect based on authentication
         if (auth()->check()) {
-            return redirect()->route('users.index')->withSuccess(__('message.msg_updated', ['name' => __('message.user')]));
+            return redirect()->route('users.index')->withSuccess(__('Data Berhasil Di Update', ['name' => __('message.user')]));
         }
-        return redirect()->back()->withSuccess(__('message.msg_updated', ['name' => 'My Profile']));
+        return redirect()->back()->withSuccess(__('Data Berhasil Di Update', ['name' => 'My Profile']));
     }
 
     /**

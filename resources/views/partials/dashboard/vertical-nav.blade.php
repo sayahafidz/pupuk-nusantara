@@ -67,8 +67,8 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ activeRoute(route('rencana-realisasi-pemupukan.index')) }}"
-            href="{{ route('rencana-realisasi-pemupukan.index') }}">
+        <a class="nav-link collapsed" data-bs-toggle="collapse" href="#sidebar-rencana-pemupukan" role="button"
+            aria-expanded="false" aria-controls="sidebar-rencana-pemupukan">
             <i class="icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                     class="bi bi-book-half" viewBox="0 0 16 16">
@@ -77,8 +77,91 @@
                 </svg>
             </i>
             <span class="item-name">Rencana Realisasi <br> Pemupukan</span>
+            <i class="right-icon">
+                <svg class="icon-18" xmlns="http://www.w3.org/2000/svg" width="18" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </i>
         </a>
+        <ul class="sub-nav collapse" id="sidebar-rencana-pemupukan" data-bs-parent="#sidebar-menu">
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('rencana-realisasi-pemupukan.index')) }}"
+                    href="{{ route('rencana-realisasi-pemupukan.index') }}">
+                    <i class="icon">
+                        <svg class="icon-10" xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <g>
+                                <circle cx="12" cy="12" r="8" fill="currentColor"></circle>
+                            </g>
+                        </svg>
+                    </i>
+                    <i class="sidenav-mini-icon"> R </i>
+                    <span class="item-name">All</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('ren-rel-pem-keb.index')) }}"
+                    href="{{ route('ren-rel-pem-keb.index') }}">
+                    <i class="icon">
+                        <svg class="icon-10" xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <g>
+                                <circle cx="12" cy="12" r="8" fill="currentColor"></circle>
+                            </g>
+                        </svg>
+                    </i>
+                    <i class="sidenav-mini-icon"> K </i>
+                    <span class="item-name">Kebun</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('ren-rel-pem-afd.index')) }}"
+                    href="{{ route('ren-rel-pem-afd.index') }}"> <i class="icon">
+                        <svg class="icon-10" xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <g>
+                                <circle cx="12" cy="12" r="8" fill="currentColor"></circle>
+                            </g>
+                        </svg>
+                    </i>
+                    <i class="sidenav-mini-icon"> A </i>
+                    <span class="item-name">Afdeling</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('ren-rel-pem-tt.index')) }}"
+                    href="{{ route('ren-rel-pem-tt.index') }}">
+                    <i class="icon">
+                        <svg class="icon-10" xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <g>
+                                <circle cx="12" cy="12" r="8" fill="currentColor"></circle>
+                            </g>
+                        </svg>
+                    </i>
+                    <i class="sidenav-mini-icon"> T </i>
+                    <span class="item-name">Tahun Tanam</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('ren-rel-pem-jp.index')) }}"
+                    href="{{ route('ren-rel-pem-jp.index') }}">
+                    <i class="icon">
+                        <svg class="icon-10" xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <g>
+                                <circle cx="12" cy="12" r="8" fill="currentColor"></circle>
+                            </g>
+                        </svg>
+                    </i>
+                    <i class="sidenav-mini-icon"> J </i>
+                    <span class="item-name">Jenis Pupuk</span>
+                </a>
+            </li>
+        </ul>
     </li>
+
     <li class="nav-item">
         <a class="nav-link {{ activeRoute(route('chart-pemupukan')) }}" aria-current="page"
             href="{{ route('chart-pemupukan') }}">
@@ -92,6 +175,7 @@
             <span class="item-name">Chart Pemupukan</span>
         </a>
     </li>
+
     {{-- <li class="nav-item">
         <a class="nav-link" data-bs-toggle="collapse" href="#horizontal-menu" role="button" aria-expanded="false"
             aria-controls="horizontal-menu">
@@ -207,7 +291,7 @@
                         fill="currentColor"></path>
                     <circle cx="18" cy="11.8999" r="1" fill="currentColor"></circle>
                 </svg>
-            </i>
+            </i>    
             <span class="item-name">Design System<span
                     class="badge rounded-pill bg-success item-name">UI</span></span>
         </a>

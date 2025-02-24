@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\DataTables\MasterDataTable;
-use App\Models\MasterData;
 use App\Helpers\AuthHelper;
-use Spatie\Permission\Models\Role;
 use App\Http\Requests\MasterDataRequest;
-// import log
+use App\Models\MasterData;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class MasterDataController extends Controller
@@ -24,7 +22,7 @@ class MasterDataController extends Controller
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
         $headerAction = '<a href="' . route('master-data.create') . '" class="btn btn-sm btn-primary" role="button">Add Master Data</a>'
-            . ' <a href="' . route('upload-data.upload') . '" class="btn btn-sm btn-success" role="button">Upload Master Data File</a>';
+        . ' <a href="' . route('upload-data.upload') . '" class="btn btn-sm btn-success" role="button">Upload Master Data File</a>';
         return $dataTable->render('global.datatable', compact('pageTitle', 'auth_user', 'assets', 'headerAction'));
     }
 
@@ -35,33 +33,21 @@ class MasterDataController extends Controller
      */
     public function create()
     {
-        $roles = Role::where('status', 1)->get()->pluck('title', 'id');
-
-        return view('users.form', compact('roles'));
+        $assets = [];
+        return view('master-data.form', compact('assets'));
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\MasterDataRequest  $request
      * @return \Illuminate\Http\Response
      */
     public function store(MasterDataRequest $request)
     {
-        $request['password'] = bcrypt($request->password);
+        MasterData::create($request->all());
 
-        $request['username'] = $request->username ?? stristr($request->email, "@", true) . rand(100, 1000);
-
-        $user = MasterData::create($request->all());
-
-        storeMediaFile($user, $request->profile_image, 'profile_image');
-
-        $user->assignRole('user');
-
-        // Save user Profile data...
-        $user->userProfile()->create($request->userProfile);
-
-        return redirect()->route('users.index')->withSuccess(__('message.msg_added', ['name' => __('users.store')]));
+        return redirect()->route('master-data.index')->withSuccess(__('Data Berhasil Di Tambahkan', ['name' => 'Master Data']));
     }
 
     /**
@@ -72,11 +58,9 @@ class MasterDataController extends Controller
      */
     public function show($id)
     {
-        $data = MasterData::with('userProfile', 'roles')->findOrFail($id);
+        $data = MasterData::findOrFail($id);
 
-        $profileImage = getSingleMedia($data, 'profile_image');
-
-        return view('users.profile', compact('data', 'profileImage'));
+        return view('master-data.show', compact('data'));
     }
 
     /**
@@ -87,55 +71,25 @@ class MasterDataController extends Controller
      */
     public function edit($id)
     {
-        $data = MasterData::with('userProfile', 'roles')->findOrFail($id);
+        $data = MasterData::findOrFail($id);
+        $assets = [];
 
-        $data['user_type'] = $data->roles->pluck('id')[0] ?? null;
-
-        $roles = Role::where('status', 1)->get()->pluck('title', 'id');
-
-        $profileImage = getSingleMedia($data, 'profile_image');
-
-        return view('users.form', compact('data', 'id', 'roles', 'profileImage'));
+        return view('master-data.form', compact('data', 'id', 'assets'));
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\MasterDataRequest  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function update(MasterDataRequest $request, $id)
     {
-        // dd($request->all());
-        $user = MasterData::with('userProfile')->findOrFail($id);
+        $masterData = MasterData::findOrFail($id);
+        $masterData->update($request->all());
 
-        $role = Role::find($request->user_role);
-        if (env('IS_DEMO')) {
-            if ($role->name === 'admin' && $user->user_type === 'admin') {
-                return redirect()->back()->with('error', 'Permission denied');
-            }
-        }
-        $user->assignRole($role->name);
-
-        $request['password'] = $request->password != '' ? bcrypt($request->password) : $user->password;
-
-        // User user data...
-        $user->fill($request->all())->update();
-
-        // Save user image...
-        if (isset($request->profile_image) && $request->profile_image != null) {
-            $user->clearMediaCollection('profile_image');
-            $user->addMediaFromRequest('profile_image')->toMediaCollection('profile_image');
-        }
-
-        // user profile data....
-        $user->userProfile->fill($request->userProfile)->update();
-
-        if (auth()->check()) {
-            return redirect()->route('users.index')->withSuccess(__('message.msg_updated', ['name' => __('message.user')]));
-        }
-        return redirect()->back()->withSuccess(__('message.msg_updated', ['name' => 'My Profile']));
+        return redirect()->route('master-data.index')->withSuccess(__('Data Berhasil Di Update', ['name' => 'Master Data']));
     }
 
     /**
@@ -146,14 +100,14 @@ class MasterDataController extends Controller
      */
     public function destroy($id)
     {
-        $user = MasterData::findOrFail($id);
+        $masterData = MasterData::findOrFail($id);
         $status = 'errors';
-        $message = __('global-message.delete_form', ['form' => __('users.title')]);
+        $message = __('global-message.delete_form', ['form' => __('Master Data')]);
 
-        if ($user != '') {
-            $user->delete();
+        if ($masterData) {
+            $masterData->delete();
             $status = 'success';
-            $message = __('global-message.delete_form', ['form' => __('users.title')]);
+            $message = __('global-message.delete_form', ['form' => __('Master Data')]);
         }
 
         if (request()->ajax()) {
@@ -163,14 +117,22 @@ class MasterDataController extends Controller
         return redirect()->back()->with($status, $message);
     }
 
-
-    // upload data
+    /**
+     * Show the form for uploading master data.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function upload()
     {
-        // return response()->json(['message' => 'mantap']);
         return view('master-data.upload');
     }
 
+    /**
+     * Import master data from parsed data.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function import(Request $request)
     {
         $validated = $request->validate([
@@ -191,7 +153,8 @@ class MasterDataController extends Controller
             'luas',
             'jlh_pokok',
             'pkk_ha',
-            'RPC',
+            'rpc',
+            'plant',
         ];
 
         $batchData = [];
@@ -207,15 +170,18 @@ class MasterDataController extends Controller
 
         if (!empty($batchData)) {
             try {
+                Log::info('Attempting to insert data:', ['data' => $batchData]);
                 MasterData::insert($batchData);
+                return response()->json(['message' => 'Data imported and saved successfully!']);
             } catch (\Exception $e) {
-                Log::error('Error inserting data:', ['error' => $e->getMessage()]);
-                return response()->json(['message' => 'Failed to save data.'], 500);
+                Log::error('Error inserting data:', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                return response()->json(['message' => 'Failed to save data.', 'error' => $e->getMessage()], 500);
             }
         }
 
-        return response()->json(['message' => 'Data imported and saved successfully!']);
+        return response()->json(['message' => 'No valid data to import'], 400);
     }
-
-    
 }

@@ -11,21 +11,24 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between">
                         <div class="header-title">
-                            <h4 class="card-title">Input Pemupukan Harian</h4>
+                            <h4 class="card-title">Input Rencana Pemupukan</h4>
                         </div>
                     </div>
                     <div class="card-body">
-                        <p>Halaman ini digunakan untuk mencatat aktivitas pemupukan harian di lapangan. Silakan lengkapi
-                            semua informasi yang diperlukan untuk memastikan data yang akurat dan lengkap. Data ini akan
-                            membantu dalam pemantauan pemupukan dan perawatan tanaman secara efektif.</p>
+                        <p>Halaman ini digunakan untuk merencanakan aktivitas pemupukan. Silakan lengkapi semua
+                            informasi yang diperlukan untuk memastikan data yang akurat dan lengkap.</p>
                         <form class="row g-3 needs-validation" novalidate>
+
+                            <input type="hidden" name="id" value="{{ $data->id ?? '' }}" id="id">
                             <div class="col-md-6">
-                                <label for="validationCustom01" class="form-label">Regional</label>
+                                <label for="regional" class="form-label">Regional</label>
                                 <select class="form-select" id="regional" required name="regional"
                                     style="background-color: green; color: white;">
                                     <option selected disabled value="">Pilih Regional...</option>
                                     @foreach ($regions as $region)
-                                        <option value="{{ $region }}">{{ $region }}</option>
+                                        <option value="{{ $region }}"
+                                            {{ old('regional', $data->regional ?? '') == $region ? 'selected' : '' }}>
+                                            {{ $region }}</option>
                                     @endforeach
                                 </select>
                                 <div class="invalid-feedback">
@@ -33,128 +36,124 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustom02" class="form-label">Kebun</label>
+                                <label for="kebun" class="form-label">Kebun</label>
                                 <select class="form-select" id="kebun" required name="kebun"
                                     style="background-color: green; color: white;">
                                     <option selected disabled value="">Pilih Kebun...</option>
+                                    @if (old('kebun', $data->kebun ?? ''))
+                                        <option value="{{ old('kebun', $data->kebun ?? '') }}" selected>
+                                            {{ old('kebun', $data->kebun ?? '') }}</option>
+                                    @endif
                                 </select>
                                 <div class="invalid-feedback">
                                     Please choose a kebun.
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustom03" class="form-label">Afdeling</label>
+                                <label for="afdeling" class="form-label">Afdeling</label>
                                 <select class="form-select" id="afdeling" required name="afdeling"
                                     style="background-color: green; color: white;">
                                     <option selected disabled value="">Pilih Afdeling...</option>
+                                    @if (old('afdeling', $data->afdeling ?? ''))
+                                        <option value="{{ old('afdeling', $data->afdeling ?? '') }}" selected>
+                                            {{ old('afdeling', $data->afdeling ?? '') }}</option>
+                                    @endif
                                 </select>
-
                                 <div class="invalid-feedback">
                                     Please choose an afdeling.
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustom04" class="form-label">Blok</label>
+                                <label for="blok" class="form-label">Blok</label>
                                 <select class="form-select" id="blok" required name="blok"
                                     style="background-color: green; color: white;">
                                     <option selected disabled value="">Pilih Blok...</option>
+                                    @if (old('blok', $data->blok ?? ''))
+                                        <option value="{{ old('blok', $data->blok ?? '') }}" selected>
+                                            {{ old('blok', $data->blok ?? '') }}</option>
+                                    @endif
                                 </select>
                                 <div class="invalid-feedback">
                                     Please choose a blok.
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustom05" class="form-label">Tahun Tanam</label>
-                                <input type="text" class="form-control" id="validationCustom05" name="tahun_tanam"
-                                    readonly>
+                                <label for="tahun_tanam" class="form-label">Tahun Tanam</label>
+                                <input type="text" class="form-control" id="tahun_tanam" name="tahun_tanam" readonly
+                                    value="{{ old('tahun_tanam', $data->tahun_tanam ?? '') }}">
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustom06" class="form-label">Luas Blok (Ha)</label>
-                                <input type="text" class="form-control" id="validationCustom06" name="luas_blok"
-                                    readonly>
+                                <label for="luas_blok" class="form-label">Luas Blok (Ha)</label>
+                                <input type="text" class="form-control" id="luas_blok" name="luas_blok" readonly
+                                    value="{{ old('luas_blok', $data->luas_blok ?? '') }}">
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustom07" class="form-label">Jumlah Pokok</label>
-                                <input type="text" class="form-control" id="validationCustom07" name="jumlah_pokok"
-                                    readonly>
+                                <label for="jumlah_pokok" class="form-label">Jumlah Pokok</label>
+                                <input type="text" class="form-control" id="jumlah_pokok" name="jumlah_pokok"
+                                    readonly value="{{ old('jumlah_pokok', $data->jumlah_pokok ?? '') }}">
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustomUsername08" class="form-label">Jenis Pupuk</label>
-                                <select class="form-select" id="validationCustomUsername08" required name="jenis_pupuk"
+                                <label for="jenis_pupuk" class="form-label">Jenis Pupuk</label>
+                                <select class="form-select" id="jenis_pupuk" required name="jenis_pupuk"
                                     style="background-color: green; color: white;">
                                     <option selected disabled value="">Pilih Jenis Pupuk...</option>
                                     @foreach ($jenisPupuk as $jp)
-                                        <option value="{{ $jp->id }}">
-                                            {{ $jp->nama_pupuk . ' - ' . $jp->jenis_pupuk }}</option>
+                                        <option value="{{ $jp->id }}"
+                                            {{ old('jenis_pupuk', $data->jenis_pupuk ?? '') == $jp->id ? 'selected' : '' }}>
+                                            {{ $jp->nama_pupuk . ' - ' . $jp->jenis_pupuk }}
+                                        </option>
                                     @endforeach
                                 </select>
                                 <div class="invalid-feedback">
-                                    Please choose a username.
+                                    Please choose a jenis pupuk.
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustom09" class="form-label">Jumlah Pemupukan (KG)</label>
-                                <input type="number" class="form-control" id="validationCustom09" required
-                                    name="jumlah_pemupukan" style="background-color: green; color: white;">
+                                <label for="jumlah_pupuk" class="form-label">Jumlah Pupuk (KG)</label>
+                                <input type="number" class="form-control" id="jumlah_pupuk" required
+                                    name="jumlah_pupuk" style="background-color: green; color: white;"
+                                    value="{{ old('jumlah_pupuk', $data->jumlah_pupuk ?? '') }}">
                                 <div class="invalid-feedback">
-                                    Please provide a valid jumlah pemupukan.
+                                    Please provide a valid jumlah pupuk.
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustom10" class="form-label">Luas Pemupukan (HA)</label>
-                                <input type="number" class="form-control" id="validationCustom10" required
-                                    name="luas_pemupukan" style="background-color: green; color: white;">
+                                <label for="luas_pemupukan" class="form-label">Luas Pemupukan (HA)</label>
+                                <input type="number" class="form-control" id="luas_pemupukan" required
+                                    name="luas_pemupukan" style="background-color: green; color: white;"
+                                    value="{{ old('luas_pemupukan', $data->luas_pemupukan ?? '') }}">
                                 <div class="invalid-feedback">
                                     Please provide a valid luas pemupukan.
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustom10" class="form-label">Tanggal Pemupukan</label>
-                                <input type="date" class="form-control" id="validationCustom11" required
-                                    name="tanggal_pemupukan" style="background-color: green; color: white;"
-                                    value="{{ date('Y-m-d') }}">
-                                <div class="invalid-feedback">
-                                    Please provide a valid tanggal pemupukan.
-                                </div>
-                            </div>
-
-                            {{-- tambah baru --}}
-                            <div class="col-md-6">
-                                <label for="validationCustom12" class="form-label">Cara Pemupukan</label>
-                                <select class="form-select" id="validationCustom12" required name="cara_pemupukan"
-                                    style="background-color: green; color: white;">
-                                    <option selected value="manual">Manual</option>
-                                    <option value="mekanisasi">Mekanisasi</option>
+                                <label for="semester_pemupukan" class="form-label">Semester Pemupukan</label>
+                                <select class="form-select" id="semester_pemupukan" required
+                                    name="semester_pemupukan" style="background-color: green; color: white;">
+                                    <option selected disabled value="">Pilih Semester...</option>
+                                    <option value="1"
+                                        {{ old('semester_pemupukan', $data->semester_pemupukan ?? '') == '1' ? 'selected' : '' }}>
+                                        Semester 1</option>
+                                    <option value="2"
+                                        {{ old('semester_pemupukan', $data->semester_pemupukan ?? '') == '2' ? 'selected' : '' }}>
+                                        Semester 2</option>
                                 </select>
                                 <div class="invalid-feedback">
-                                    Please provide a valid cara pemupukan.
+                                    Please provide a valid semester pemupukan.
                                 </div>
                             </div>
-                            <div class="col-md-6" id="jumlah-tenaga-kerja-container" style="display: none;">
-                                <label for="validationCustom13" class="form-label">Jumlah Tenaga Kerja</label>
-                                <input type="number" class="form-control" id="validationCustom13"
-                                    name="jumlah_tenaga_kerja" min="1"
-                                    style="background-color: green; color: white;">
-                                <div class="invalid-feedback">
-                                    Please provide a valid jumlah tenaga kerja.
-                                </div>
-                            </div>
-
-
-                            {{-- apabila memilih mekanisasi, maka akan muncul field baru dengan nama Jumlah Tenaga Kerja (user akan menginput jumlah tenaga kerja dalam integger) --}}
                             <div class="col-12">
                                 <button class="btn btn-primary form-control" id="submit-data" type="button">Simpan
-                                    Data
-                                    Pemupukan</button>
+                                    Data Rencana Pemupukan</button>
                             </div>
                         </form>
                     </div>
@@ -164,17 +163,6 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script>
-        document.getElementById('validationCustom12').addEventListener('change', function() {
-            const caraPemupukan = this.value;
-            const tenagaKerjaContainer = document.getElementById('jumlah-tenaga-kerja-container');
-            if (caraPemupukan === 'mekanisasi') {
-                tenagaKerjaContainer.style.display = 'block';
-            } else {
-                tenagaKerjaContainer.style.display = 'none';
-            }
-        });
-    </script>
     <script>
         document.getElementById('regional').addEventListener('change', function() {
             const regional = this.value;
@@ -226,77 +214,73 @@
             fetch(`/api/detail/${regional}/${kebun}/${afdeling}/${blok}`)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('validationCustom05').value = data.tahun_tanam;
-                    document.getElementById('validationCustom06').value = data.luas;
-                    document.getElementById('validationCustom07').value = data.jlh_pokok;
+                    document.getElementById('tahun_tanam').value = data.tahun_tanam;
+                    document.getElementById('luas_blok').value = data.luas;
+                    document.getElementById('jumlah_pokok').value = data.jlh_pokok;
                 });
         });
 
-
         document.querySelector('#submit-data').addEventListener('click', function() {
-            const form = document.querySelector('form'); // Get the form element
-            const formData = new FormData(form); // Collect form data
+            event.preventDefault(); // Prevent default form submission
 
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
+
+            const id = document.querySelector('input[name="id"]').value; // Get the ID from the hidden input
+
+            // const pathArray = window.location.pathname.split('/'); // Split the URL by '/'
+            // const id = pathArray[pathArray.length - 1]; // Get the last segment of the URL, which is the ID
+
+            console.log(id);
             // Get the values from the form fields manually using their IDs
-            const regionalValue = document.querySelector('#regional').value;
-            const kebunValue = document.querySelector('#kebun').value;
-            const afdelingValue = document.querySelector('#afdeling').value;
-            const blokValue = document.querySelector('#blok').value;
-            const tahunTanamValue = document.querySelector('#validationCustom05').value;
-            const luasBlokValue = document.querySelector('#validationCustom06').value;
-            const jumlahPokokValue = document.querySelector('#validationCustom07').value;
-            const jenisPupukValue = document.querySelector('#validationCustomUsername08').value;
-            const jumlahPemupukanValue = document.querySelector('#validationCustom09').value;
-            const luasPemupukanValue = document.querySelector('#validationCustom10').value;
-            const tanggalPemupukanValue = document.querySelector('#validationCustom11').value;
-            const caraPemupukan = document.querySelector('#validationCustom12').value;
-            const jumlahMekanisasi = document.querySelector('#validationCustom13').value;
+            const regional = document.getElementById('regional').value;
+            const kebun = document.getElementById('kebun').value;
+            const afdeling = document.getElementById('afdeling').value;
+            const blok = document.getElementById('blok').value;
+            const jenis_pupuk = document.getElementById('jenis_pupuk').value;
+            const jumlah_pupuk = document.getElementById('jumlah_pupuk').value;
+            const luas_pemupukan = document.getElementById('luas_pemupukan').value;
+            const semester_pemupukan = document.getElementById('semester_pemupukan').value;
+            const tahun_tanam = document.getElementById('tahun_tanam').value;
+            const luas_blok = document.getElementById('luas_blok').value;
+            const jumlah_pokok = document.getElementById('jumlah_pokok').value;
 
-            // Log the values to see them
-            console.log('Regional:', regionalValue);
-            console.log('Kebun:', kebunValue);
-            console.log('Afdeling:', afdelingValue);
-            console.log('Blok:', blokValue);
-            console.log('Tahun Tanam:', tahunTanamValue);
-            console.log('Luas Blok:', luasBlokValue);
-            console.log('Jumlah Pokok:', jumlahPokokValue);
-            console.log('Jenis Pupuk:', jenisPupukValue);
-            console.log('Jumlah Pemupukan:', jumlahPemupukanValue);
-            console.log('Luas Pemupukan:', luasPemupukanValue);
-            console.log('Tanggal Pemupukan:', tanggalPemupukanValue);
-            console.log('Cara Pemupukan:', caraPemupukan);
-            console.log('Jumlah Tenaga Kerja:', jumlahMekanisasi);
 
+
+            // Spoof PUT by adding _method field
+            formData.append('_method', 'PUT');
             // Append the additional manually collected values to the FormData object
-            formData.append('regional', regionalValue);
-            formData.append('kebun', kebunValue);
-            formData.append('afdeling', afdelingValue);
-            formData.append('blok', blokValue);
-            formData.append('tahun_tanam', tahunTanamValue);
-            formData.append('luas_blok', luasBlokValue);
-            formData.append('jumlah_pokok', jumlahPokokValue);
-            formData.append('jenis_pupuk', jenisPupukValue);
-            formData.append('jumlah_pemupukan', jumlahPemupukanValue);
-            formData.append('luas_pemupukan', luasPemupukanValue);
-            formData.append('tanggal_pemupukan', tanggalPemupukanValue);
-            formData.append('cara_pemupukan', caraPemupukan);
-            formData.append('jumlah_mekanisasi', jumlahMekanisasi);
+            formData.append('regional', regional);
+            formData.append('kebun', kebun);
+            formData.append('afdeling', afdeling);
+            formData.append('blok', blok);
+            formData.append('jenis_pupuk', jenis_pupuk);
+            formData.append('jumlah_pupuk', jumlah_pupuk);
+            formData.append('luas_pemupukan', luas_pemupukan);
+            formData.append('semester_pemupukan', semester_pemupukan);
+            formData.append('tahun_tanam', tahun_tanam);
+            formData.append('luas_blok', luas_blok);
+            formData.append('jumlah_pokok', jumlah_pokok);
 
-            fetch('{{ route('pemupukan.store') }}', {
+            const url = id ? '{{ route('rencana-pemupukan.update', ['rencana_pemupukan' => ':id']) }}'.replace(
+                ':id', id) : '{{ route('rencana-pemupukan.store') }}';
+
+
+            fetch(url, {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}', // CSRF token for Laravel
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         'Accept': 'application/json',
                     },
-                    body: formData, // Send form data
+                    body: formData,
                 })
                 .then(response => {
                     if (!response.ok) {
                         return response.json().then(err => {
                             throw err;
-                        }); // Parse error response
+                        });
                     }
-                    return response.json(); // Parse success response
+                    return response.json();
                 })
                 .then(data => {
                     if (data.success) {
@@ -306,13 +290,12 @@
                             icon: 'success',
                             confirmButtonText: 'OK',
                         }).then(() => {
-                            // Reset form after successful submission
                             form.reset();
                         });
                     } else {
                         Swal.fire({
                             title: 'Failed!',
-                            text: data.message || 'Data failed to save. Please try again.',
+                            text: data.message || 'Data failed to save.',
                             icon: 'error',
                             confirmButtonText: 'OK',
                         });
@@ -321,8 +304,7 @@
                 .catch(error => {
                     const messages = error.errors ?
                         Object.values(error.errors).flat().join('\n') :
-                        'An error occurred. Please check your input or try again later.';
-
+                        'An error occurred. Please check your input.';
                     Swal.fire({
                         title: 'Error!',
                         text: messages,
@@ -332,5 +314,4 @@
                 });
         });
     </script>
-
 </x-app-layout>

@@ -24,11 +24,12 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'username',
         'first_name',
         'last_name',
+        'email',
         'phone_number',
         'status',
         'banned',
-        'email',
         'password',
+        'user_type',
     ];
 
     /**

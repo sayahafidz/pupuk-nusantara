@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\JenisPupuk;
+use App\Models\Pemupukan;
+use App\Models\RencanaPemupukan;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -12,7 +16,27 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         $assets = ['chart', 'animation'];
-        return view('dashboards.dashboard', compact('assets'));
+
+        // count all data rencana_pemupukan
+        $rencana_pemupukan = RencanaPemupukan::count();
+        // count all data pemupukan
+        $pemupukan = Pemupukan::count();
+        // count all data jenis_pupuk
+        $jenis_pupuk = JenisPupuk::count();
+
+        // count total jumlah_pupuk pemupukan
+        $jumlah_pupuk = Pemupukan::sum('jumlah_pupuk');
+
+        // count total jumlah_pupuk renacana_pemupukan
+        $jumlah_pupuk_rencana = RencanaPemupukan::sum('jumlah_pupuk');
+
+        // count total users
+        $users = User::count();
+
+        // get percentage of jumlah_pupuk pemupukan
+        $percentage_pemupukan = ($jumlah_pupuk / $jumlah_pupuk_rencana) * 100;
+
+        return view('dashboards.dashboard', compact('assets', 'rencana_pemupukan', 'pemupukan', 'jenis_pupuk', 'jumlah_pupuk', 'jumlah_pupuk_rencana', 'percentage_pemupukan', 'users'));
     }
 
     /*
@@ -21,27 +45,27 @@ class HomeController extends Controller
     public function horizontal(Request $request)
     {
         $assets = ['chart', 'animation'];
-        return view('menu-style.horizontal',compact('assets'));
+        return view('menu-style.horizontal', compact('assets'));
     }
     public function dualhorizontal(Request $request)
     {
         $assets = ['chart', 'animation'];
-        return view('menu-style.dual-horizontal',compact('assets'));
+        return view('menu-style.dual-horizontal', compact('assets'));
     }
     public function dualcompact(Request $request)
     {
         $assets = ['chart', 'animation'];
-        return view('menu-style.dual-compact',compact('assets'));
+        return view('menu-style.dual-compact', compact('assets'));
     }
     public function boxed(Request $request)
     {
         $assets = ['chart', 'animation'];
-        return view('menu-style.boxed',compact('assets'));
+        return view('menu-style.boxed', compact('assets'));
     }
     public function boxedfancy(Request $request)
     {
         $assets = ['chart', 'animation'];
-        return view('menu-style.boxed-fancy',compact('assets'));
+        return view('menu-style.boxed-fancy', compact('assets'));
     }
 
     /*
@@ -55,7 +79,7 @@ class HomeController extends Controller
     public function calender(Request $request)
     {
         $assets = ['calender'];
-        return view('special-pages.calender',compact('assets'));
+        return view('special-pages.calender', compact('assets'));
     }
 
     public function kanban(Request $request)
@@ -77,7 +101,6 @@ class HomeController extends Controller
     {
         return view('special-pages.timeline');
     }
-
 
     /*
      * Widget Routs
@@ -180,7 +203,7 @@ class HomeController extends Controller
         return view('forms.validation');
     }
 
-     /*
+    /*
      * Table Page Routs
      */
     public function bootstraptable(Request $request)
@@ -229,63 +252,62 @@ class HomeController extends Controller
         return view('terms-of-use');
     }
 
-
     /*
-    * Landing Page Routs
-    */
-    public function landing_index(Request $request)
+     * Landing Page Routs
+     */
+    public function landingIndex(Request $request)
     {
         return view('landing-pages.pages.index');
     }
-    public function landing_blog(Request $request)
+    public function landingBlog(Request $request)
     {
         return view('landing-pages.pages.blog');
     }
-    public function landing_about(Request $request)
+    public function landingAbout(Request $request)
     {
         return view('landing-pages.pages.about');
     }
-    public function landing_blog_detail(Request $request)
+    public function landingBlogDetail(Request $request)
     {
         return view('landing-pages.pages.blog-detail');
     }
-    public function landing_contact(Request $request)
+    public function landingContact(Request $request)
     {
         return view('landing-pages.pages.contact-us');
     }
-    public function landing_ecommerce(Request $request)
+    public function landingEcommerce(Request $request)
     {
         return view('landing-pages.pages.ecommerce-landing-page');
     }
-    public function landing_faq(Request $request)
+    public function landingFaq(Request $request)
     {
         return view('landing-pages.pages.faq');
     }
-    public function landing_feature(Request $request)
+    public function landingFeature(Request $request)
     {
         return view('landing-pages.pages.feature');
     }
-    public function landing_pricing(Request $request)
+    public function landingPricing(Request $request)
     {
         return view('landing-pages.pages.pricing');
     }
-    public function landing_saas(Request $request)
+    public function landingSaas(Request $request)
     {
         return view('landing-pages.pages.saas-marketing-landing-page');
     }
-    public function landing_shop(Request $request)
+    public function landingShop(Request $request)
     {
         return view('landing-pages.pages.shop');
     }
-    public function landing_shop_detail(Request $request)
+    public function landingShopDetail(Request $request)
     {
         return view('landing-pages.pages.shop_detail');
     }
-    public function landing_software(Request $request)
+    public function landingSoftware(Request $request)
     {
         return view('landing-pages.pages.software-landing-page');
     }
-    public function landing_startup(Request $request)
+    public function landingStartup(Request $request)
     {
         return view('landing-pages.pages.startup-landing-page');
     }

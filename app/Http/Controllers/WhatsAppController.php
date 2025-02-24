@@ -87,7 +87,7 @@ class WhatsAppController extends Controller
             if ($sendResponse->failed()) {
                 return response()->json([
                     'error' => 'Failed to send data to ' . $chatId,
-                    'details' => $sendResponse->body()
+                    'details' => $sendResponse->body(),
                 ], 500);
             }
         }
@@ -95,12 +95,11 @@ class WhatsAppController extends Controller
         return response()->json(['success' => 'Data sent successfully to multiple chat IDs']);
     }
 
-
     /**
      * Display a listing of the resource.
-     * 
+     *
      * @return \Illuminate\Http\Response
-     * 
+     *
      */
     public function index(WhatsappDataTable $dataTable)
     {
@@ -114,9 +113,9 @@ class WhatsAppController extends Controller
 
     /**
      * Show the form for creating a new resource.
-     * 
+     *
      * @return \Illuminate\Http\Response
-     * 
+     *
      */
     public function create()
     {
@@ -129,24 +128,24 @@ class WhatsAppController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     * 
+     *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
-     * 
+     *
      */
     public function store(WhatsappRequest $request)
     {
         $whatsapp = Whatsapp::create($request->all());
 
-        return redirect()->route('whatsapp.index')->withSuccess(__('message.msg_added', ['name' => __('Whatsapp Setting')]));
+        return redirect()->route('whatsapp.index')->withSuccess(__('Data Berhasil Di Tambahkan', ['name' => __('Whatsapp Setting')]));
     }
 
     /**
      * Display the specified resource.
-     * 
+     *
      * @param  \App\Models\Whatsapp  $whatsapp
      * @return \Illuminate\Http\Response
-     * 
+     *
      */
     public function show($id)
     {
@@ -155,13 +154,12 @@ class WhatsAppController extends Controller
         return view('whatsapp.show', compact('whatsapp'));
     }
 
-
     /**
      * Show the form for editing the specified resource.
-     * 
+     *
      * @param  \App\Models\Whatsapp  $whatsapp
      * @return \Illuminate\Http\Response
-     * 
+     *
      */
     public function edit($id)
     {
@@ -173,29 +171,28 @@ class WhatsAppController extends Controller
         return view('whatsapp.form', compact('whatsapp', 'users', 'id'));
     }
 
-
     /**
      * Update the specified resource in storage.
-     * 
+     *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Whatsapp  $whatsapp
      * @return \Illuminate\Http\Response
-     * 
+     *
      */
     public function update(WhatsappRequest $request, $id)
     {
         $whatsapp = Whatsapp::findOrFail($id);
         $whatsapp->update($request->all());
 
-        return redirect()->route('whatsapp.index')->withSuccess(__('message.msg_updated', ['name' => __('Whatsapp Setting')]));
+        return redirect()->route('whatsapp.index')->withSuccess(__('Data Berhasil Di Update', ['name' => __('Whatsapp Setting')]));
     }
 
     /**
      * Remove the specified resource from storage.
-     * 
+     *
      * @param  \App\Models\Whatsapp  $whatsapp
      * @return \Illuminate\Http\Response
-     * 
+     *
      */
     public function destroy($id)
     {

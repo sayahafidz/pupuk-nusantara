@@ -2,27 +2,109 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\RencanaRealisasiPemupukanDataTable;
 use App\Helpers\AuthHelper;
-use App\Models\Pemupukan;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use App\Models\RencanaRealisasiPemupukan;
+use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Facades\DataTables;
 
-class RencanaRealisasiPemupukanController extends Controller
+class RencanaRealisasiPemupukanJPController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(RencanaRealisasiPemupukanDataTable $dataTable)
+    public function index()
     {
         $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
 
-        return $dataTable->render('global.datatable-rencana-realisasi', compact(
+        // Fetch distinct values for dropdowns
+        $regionals = RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional');
+        $kebuns = RencanaRealisasiPemupukan::select('kebun')->distinct()->pluck('kebun');
+        $afdelings = RencanaRealisasiPemupukan::select('afdeling')->distinct()->pluck('afdeling');
+        $tahun_tanams = RencanaRealisasiPemupukan::select('tahun_tanam')->distinct()->pluck('tahun_tanam');
+        $jenis_pupuks = RencanaRealisasiPemupukan::select('jenis_pupuk')->distinct()->pluck('jenis_pupuk');
+
+        if (request()->ajax()) {
+            $query = RencanaRealisasiPemupukan::query();
+
+            // Apply filters if provided
+            if ($regional = request()->input('regional')) {
+                $query->where('regional', $regional);
+            }
+            if ($kebun = request()->input('kebun')) {
+                $query->where('kebun', $kebun);
+            }
+            if ($afdeling = request()->input('afdeling')) {
+                $query->where('afdeling', $afdeling);
+            }
+            if ($tahun_tanam = request()->input('tahun_tanam')) {
+                $query->where('tahun_tanam', $tahun_tanam);
+            }
+            if ($jenis_pupuk = request()->input('jenis_pupuk')) {
+                $query->where('jenis_pupuk', $jenis_pupuk);
+            }
+
+            $model = $query->select([
+                'regional',
+                'kebun', // Assuming kebun is still relevant; adjust if not
+                'afdeling',
+                'tahun_tanam',
+                'jenis_pupuk',
+                DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
+                DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
+                DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
+                DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
+                DB::raw("SUM(rencana_total) as rencana_total"),
+                DB::raw("SUM(realisasi_total) as realisasi_total"),
+            ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam','jenis_pupuk');
+
+            return DataTables::eloquent($model)
+                ->addColumn('rencana_semester_1', function ($row) {
+                    return number_format($row->rencana_semester_1, 0, ',', '.') . ' Kg';
+                })
+                ->addColumn('realisasi_semester_1', function ($row) {
+                    return number_format($row->realisasi_semester_1, 0, ',', '.') . ' Kg';
+                })
+                ->addColumn('percentage_semester_1', function ($row) {
+                    return $row->rencana_semester_1 > 0
+                    ? number_format(($row->realisasi_semester_1 / $row->rencana_semester_1) * 100, 2, ',', '.') . '%'
+                    : '0%';
+                })
+                ->addColumn('rencana_semester_2', function ($row) {
+                    return number_format($row->rencana_semester_2, 0, ',', '.') . ' Kg';
+                })
+                ->addColumn('realisasi_semester_2', function ($row) {
+                    return number_format($row->realisasi_semester_2, 0, ',', '.') . ' Kg';
+                })
+                ->addColumn('percentage_semester_2', function ($row) {
+                    return $row->rencana_semester_2 > 0
+                    ? number_format(($row->realisasi_semester_2 / $row->rencana_semester_2) * 100, 2, ',', '.') . '%'
+                    : '0%';
+                })
+                ->addColumn('rencana_total', function ($row) {
+                    return number_format($row->rencana_total, 0, ',', '.') . ' Kg';
+                })
+                ->addColumn('realisasi_total', function ($row) {
+                    return number_format($row->realisasi_total, 0, ',', '.') . ' Kg';
+                })
+                ->addColumn('percentage_total', function ($row) {
+                    return $row->rencana_total > 0
+                    ? number_format(($row->realisasi_total / $row->rencana_total) * 100, 2, ',', '.') . '%'
+                    : '0%';
+                })
+                ->toJson();
+        }
+
+        return view('global.datatable-rencana-realisasi-jp', compact(
             'pageTitle',
             'auth_user',
             'assets',
+            'regionals',
+            'kebuns',
+            'afdelings',
+            'jenis_pupuks',
+            'tahun_tanams'
         ));
     }
 
@@ -215,56 +297,56 @@ class RencanaRealisasiPemupukanController extends Controller
 
     //     return response()->json($data);
     // }
-    public function fetchData(Request $request)
-    {
-        $query = Pemupukan::query()
-            ->join('rencana_pemupukan', 'pemupukan.regional', '=', 'rencana_pemupukan.regional')
-            ->select(
-                'pemupukan.id',
-                'pemupukan.regional',
-                'pemupukan.kebun',
-                'pemupukan.afdeling',
-                'pemupukan.blok',
-                'pemupukan.tahun_tanam',
-                'pemupukan.jenis_pupuk',
-                'pemupukan.jumlah_pupuk',
-                'rencana_pemupukan.semester_pemupukan'
-            )
-            ->paginate(100); // Paginate with 100 rows per page
+    // public function fetchData(Request $request)
+    // {
+    //     $query = Pemupukan::query()
+    //         ->join('rencana_pemupukan', 'pemupukan.regional', '=', 'rencana_pemupukan.regional')
+    //         ->select(
+    //             'pemupukan.id',
+    //             'pemupukan.regional',
+    //             'pemupukan.kebun',
+    //             'pemupukan.afdeling',
+    //             'pemupukan.blok',
+    //             'pemupukan.tahun_tanam',
+    //             'pemupukan.jenis_pupuk',
+    //             'pemupukan.jumlah_pupuk',
+    //             'rencana_pemupukan.semester_pemupukan'
+    //         )
+    //         ->paginate(100); // Paginate with 100 rows per page
 
-        return response()->json($query);
-    }
+    //     return response()->json($query);
+    // }
 
-    public function getPemupukanData($request)
-    {
-        // API endpoint
-        $url = route('rencana-realisasi.fetchdata');
+    // public function getPemupukanData($request)
+    // {
+    //     // API endpoint
+    //     $url = route('rencana-realisasi.fetchdata');
 
-        // Send GET request to the API with query parameters
-        $response = Http::get($url, [
-            'regional' => $request->get('regional'),
-            'kebun' => $request->get('kebun'),
-            'jenis_pupuk' => $request->get('jenis_pupuk'),
-            'afdeling' => $request->get('afdeling'),
-            'tahun_tanam' => $request->get('tahun_tanam'),
-        ]);
+    //     // Send GET request to the API with query parameters
+    //     $response = Http::get($url, [
+    //         'regional' => $request->get('regional'),
+    //         'kebun' => $request->get('kebun'),
+    //         'jenis_pupuk' => $request->get('jenis_pupuk'),
+    //         'afdeling' => $request->get('afdeling'),
+    //         'tahun_tanam' => $request->get('tahun_tanam'),
+    //     ]);
 
-        // Check if the request was successful
-        if ($response->successful()) {
-            $data = $response->json();
+    //     // Check if the request was successful
+    //     if ($response->successful()) {
+    //         $data = $response->json();
 
-            // Return data structured with 'pemupukan' and 'rencana_pemupukan'
-            return [
-                'pemupukan' => $data['pemupukan'] ?? [],
-                'rencana_pemupukan' => $data['rencana_pemupukan'] ?? [],
-            ];
-        }
+    //         // Return data structured with 'pemupukan' and 'rencana_pemupukan'
+    //         return [
+    //             'pemupukan' => $data['pemupukan'] ?? [],
+    //             'rencana_pemupukan' => $data['rencana_pemupukan'] ?? [],
+    //         ];
+    //     }
 
-        // If the API request fails, return empty data with an error message
-        return [
-            'pemupukan' => [],
-            'rencana_pemupukan' => [],
-            'error' => 'Failed to fetch data from the API',
-        ];
-    }
+    //     // If the API request fails, return empty data with an error message
+    //     return [
+    //         'pemupukan' => [],
+    //         'rencana_pemupukan' => [],
+    //         'error' => 'Failed to fetch data from the API',
+    //     ];
+    // }
 }

@@ -8,7 +8,6 @@
             </svg>
         </span>
     </a>
-    @if(auth()->user()->hasRole('admin') && auth()->id() !== $id)
     <?php 
     $message = __('global-message.delete_alert', ['form' => __('users.title')])
     ?>
@@ -25,5 +24,4 @@
         @method('delete')
         @csrf()
     </form>
-    @endif
 </div>

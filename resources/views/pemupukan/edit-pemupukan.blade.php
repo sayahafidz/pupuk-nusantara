@@ -19,13 +19,18 @@
                             semua informasi yang diperlukan untuk memastikan data yang akurat dan lengkap. Data ini akan
                             membantu dalam pemantauan pemupukan dan perawatan tanaman secara efektif.</p>
                         <form class="row g-3 needs-validation" novalidate>
+                            <!-- Hidden input for ID (if editing) -->
+                            <input type="hidden" name="id" value="{{ $data->id ?? '' }}">
+
                             <div class="col-md-6">
                                 <label for="validationCustom01" class="form-label">Regional</label>
                                 <select class="form-select" id="regional" required name="regional"
                                     style="background-color: green; color: white;">
                                     <option selected disabled value="">Pilih Regional...</option>
                                     @foreach ($regions as $region)
-                                        <option value="{{ $region }}">{{ $region }}</option>
+                                        <option value="{{ $region }}"
+                                            {{ isset($data) && $data->regional == $region ? 'selected' : '' }}>
+                                            {{ $region }}</option>
                                     @endforeach
                                 </select>
                                 <div class="invalid-feedback">
@@ -37,6 +42,9 @@
                                 <select class="form-select" id="kebun" required name="kebun"
                                     style="background-color: green; color: white;">
                                     <option selected disabled value="">Pilih Kebun...</option>
+                                    @if (isset($data))
+                                        <option value="{{ $data->kebun }}" selected>{{ $data->kebun }}</option>
+                                    @endif
                                 </select>
                                 <div class="invalid-feedback">
                                     Please choose a kebun.
@@ -47,8 +55,10 @@
                                 <select class="form-select" id="afdeling" required name="afdeling"
                                     style="background-color: green; color: white;">
                                     <option selected disabled value="">Pilih Afdeling...</option>
+                                    @if (isset($data))
+                                        <option value="{{ $data->afdeling }}" selected>{{ $data->afdeling }}</option>
+                                    @endif
                                 </select>
-
                                 <div class="invalid-feedback">
                                     Please choose an afdeling.
                                 </div>
@@ -58,6 +68,9 @@
                                 <select class="form-select" id="blok" required name="blok"
                                     style="background-color: green; color: white;">
                                     <option selected disabled value="">Pilih Blok...</option>
+                                    @if (isset($data))
+                                        <option value="{{ $data->blok }}" selected>{{ $data->blok }}</option>
+                                    @endif
                                 </select>
                                 <div class="invalid-feedback">
                                     Please choose a blok.
@@ -66,7 +79,7 @@
                             <div class="col-md-6">
                                 <label for="validationCustom05" class="form-label">Tahun Tanam</label>
                                 <input type="text" class="form-control" id="validationCustom05" name="tahun_tanam"
-                                    readonly>
+                                    value="{{ $data->tahun_tanam ?? '' }}" readonly>
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
@@ -74,7 +87,7 @@
                             <div class="col-md-6">
                                 <label for="validationCustom06" class="form-label">Luas Blok (Ha)</label>
                                 <input type="text" class="form-control" id="validationCustom06" name="luas_blok"
-                                    readonly>
+                                    value="{{ $data->luas_blok ?? '' }}" readonly>
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
@@ -82,7 +95,7 @@
                             <div class="col-md-6">
                                 <label for="validationCustom07" class="form-label">Jumlah Pokok</label>
                                 <input type="text" class="form-control" id="validationCustom07" name="jumlah_pokok"
-                                    readonly>
+                                    value="{{ $data->jumlah_pokok ?? '' }}" readonly>
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
@@ -93,8 +106,10 @@
                                     style="background-color: green; color: white;">
                                     <option selected disabled value="">Pilih Jenis Pupuk...</option>
                                     @foreach ($jenisPupuk as $jp)
-                                        <option value="{{ $jp->id }}">
-                                            {{ $jp->nama_pupuk . ' - ' . $jp->jenis_pupuk }}</option>
+                                        <option value="{{ $jp->id }}"
+                                            {{ isset($data) && $data->jenis_pupuk == $jp->id ? 'selected' : '' }}>
+                                            {{ $jp->nama_pupuk . ' - ' . $jp->jenis_pupuk }}
+                                        </option>
                                     @endforeach
                                 </select>
                                 <div class="invalid-feedback">
@@ -104,7 +119,8 @@
                             <div class="col-md-6">
                                 <label for="validationCustom09" class="form-label">Jumlah Pemupukan (KG)</label>
                                 <input type="number" class="form-control" id="validationCustom09" required
-                                    name="jumlah_pemupukan" style="background-color: green; color: white;">
+                                    name="jumlah_pemupukan" value="{{ $data->jumlah_pemupukan ?? '' }}"
+                                    style="background-color: green; color: white;">
                                 <div class="invalid-feedback">
                                     Please provide a valid jumlah pemupukan.
                                 </div>
@@ -112,7 +128,8 @@
                             <div class="col-md-6">
                                 <label for="validationCustom10" class="form-label">Luas Pemupukan (HA)</label>
                                 <input type="number" class="form-control" id="validationCustom10" required
-                                    name="luas_pemupukan" style="background-color: green; color: white;">
+                                    name="luas_pemupukan" value="{{ $data->luas_pemupukan ?? '' }}"
+                                    style="background-color: green; color: white;">
                                 <div class="invalid-feedback">
                                     Please provide a valid luas pemupukan.
                                 </div>
@@ -120,41 +137,42 @@
                             <div class="col-md-6">
                                 <label for="validationCustom10" class="form-label">Tanggal Pemupukan</label>
                                 <input type="date" class="form-control" id="validationCustom11" required
-                                    name="tanggal_pemupukan" style="background-color: green; color: white;"
-                                    value="{{ date('Y-m-d') }}">
+                                    name="tanggal_pemupukan" value="{{ $data->tanggal_pemupukan ?? date('Y-m-d') }}"
+                                    style="background-color: green; color: white;">
                                 <div class="invalid-feedback">
                                     Please provide a valid tanggal pemupukan.
                                 </div>
                             </div>
-
-                            {{-- tambah baru --}}
                             <div class="col-md-6">
                                 <label for="validationCustom12" class="form-label">Cara Pemupukan</label>
                                 <select class="form-select" id="validationCustom12" required name="cara_pemupukan"
                                     style="background-color: green; color: white;">
-                                    <option selected value="manual">Manual</option>
-                                    <option value="mekanisasi">Mekanisasi</option>
+                                    <option value="manual"
+                                        {{ isset($data) && $data->cara_pemupukan == 'manual' ? 'selected' : '' }}>
+                                        Manual</option>
+                                    <option value="mekanisasi"
+                                        {{ isset($data) && $data->cara_pemupukan == 'mekanisasi' ? 'selected' : '' }}>
+                                        Mekanisasi</option>
                                 </select>
                                 <div class="invalid-feedback">
                                     Please provide a valid cara pemupukan.
                                 </div>
                             </div>
-                            <div class="col-md-6" id="jumlah-tenaga-kerja-container" style="display: none;">
+                            <div class="col-md-6" id="jumlah-tenaga-kerja-container"
+                                style="display: {{ isset($data) && $data->cara_pemupukan == 'mekanisasi' ? 'block' : 'none' }};">
                                 <label for="validationCustom13" class="form-label">Jumlah Tenaga Kerja</label>
                                 <input type="number" class="form-control" id="validationCustom13"
                                     name="jumlah_tenaga_kerja" min="1"
+                                    value="{{ $data->jumlah_tenaga_kerja ?? '' }}"
                                     style="background-color: green; color: white;">
                                 <div class="invalid-feedback">
                                     Please provide a valid jumlah tenaga kerja.
                                 </div>
                             </div>
-
-
-                            {{-- apabila memilih mekanisasi, maka akan muncul field baru dengan nama Jumlah Tenaga Kerja (user akan menginput jumlah tenaga kerja dalam integger) --}}
                             <div class="col-12">
-                                <button class="btn btn-primary form-control" id="submit-data" type="button">Simpan
-                                    Data
-                                    Pemupukan</button>
+                                <button class="btn btn-primary form-control" id="submit-data" type="button">
+                                    {{ isset($data) ? 'Update Data Pemupukan' : 'Simpan Data Pemupukan' }}
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -174,8 +192,7 @@
                 tenagaKerjaContainer.style.display = 'none';
             }
         });
-    </script>
-    <script>
+
         document.getElementById('regional').addEventListener('change', function() {
             const regional = this.value;
             fetch(`/api/kebun/${regional}`)
@@ -232,12 +249,16 @@
                 });
         });
 
-
         document.querySelector('#submit-data').addEventListener('click', function() {
-            const form = document.querySelector('form'); // Get the form element
-            const formData = new FormData(form); // Collect form data
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
+            const pathArray = window.location.pathname.split('/'); // Split the URL by '/'
+            const id = pathArray[pathArray.length - 1]; // Get the last segment of the URL, which is the ID
 
-            // Get the values from the form fields manually using their IDs
+
+            {{-- const url = id ? `/pemupukan/update/${id}` : '{{ route('pemupukan.update') }}'; --}}
+
+            // set the data
             const regionalValue = document.querySelector('#regional').value;
             const kebunValue = document.querySelector('#kebun').value;
             const afdelingValue = document.querySelector('#afdeling').value;
@@ -251,6 +272,8 @@
             const tanggalPemupukanValue = document.querySelector('#validationCustom11').value;
             const caraPemupukan = document.querySelector('#validationCustom12').value;
             const jumlahMekanisasi = document.querySelector('#validationCustom13').value;
+
+
 
             // Log the values to see them
             console.log('Regional:', regionalValue);
@@ -282,21 +305,23 @@
             formData.append('cara_pemupukan', caraPemupukan);
             formData.append('jumlah_mekanisasi', jumlahMekanisasi);
 
-            fetch('{{ route('pemupukan.store') }}', {
+            url = `/pemupukan/update/${id}`;
+
+            fetch(url, {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}', // CSRF token for Laravel
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         'Accept': 'application/json',
                     },
-                    body: formData, // Send form data
+                    body: formData,
                 })
                 .then(response => {
                     if (!response.ok) {
                         return response.json().then(err => {
                             throw err;
-                        }); // Parse error response
+                        });
                     }
-                    return response.json(); // Parse success response
+                    return response.json();
                 })
                 .then(data => {
                     if (data.success) {
@@ -306,8 +331,7 @@
                             icon: 'success',
                             confirmButtonText: 'OK',
                         }).then(() => {
-                            // Reset form after successful submission
-                            form.reset();
+                            window.location.href = '{{ route('rekap-pemupukan') }}';
                         });
                     } else {
                         Swal.fire({
@@ -332,5 +356,4 @@
                 });
         });
     </script>
-
 </x-app-layout>

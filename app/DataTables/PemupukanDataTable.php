@@ -3,7 +3,6 @@
 namespace App\DataTables;
 
 use App\Models\Pemupukan; // Use the Pemupukan model
-use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Services\DataTable;
 
@@ -19,6 +18,9 @@ class PemupukanDataTable extends DataTable
     {
         return datatables()
             ->eloquent($query)
+            ->addColumn('jumlah_pupuk', function ($row) {
+                return $row->jumlah_pupuk . ' kg';
+            })
             ->addColumn('action', 'pemupukan.action') // Adjust the action view to match Pemupukan
             ->rawColumns(['action']);
     }

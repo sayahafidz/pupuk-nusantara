@@ -2,20 +2,22 @@
 
 // Controllers
 
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JenisPupukController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PemupukanController;
 use App\Http\Controllers\RencanaPemupukanController;
+use App\Http\Controllers\RencanaRealisasiPemupukanAfdController;
+use App\Http\Controllers\RencanaRealisasiPemupukanTTController;
+use App\Http\Controllers\RencanaRealisasiPemupukanJPController;
 use App\Http\Controllers\RencanaRealisasiPemupukanController;
-use App\Http\Controllers\Security\RolePermission;
-use App\Http\Controllers\Security\RoleController;
+use App\Http\Controllers\RencanaRealisasiPemupukanKebunController;
 use App\Http\Controllers\Security\PermissionController;
+use App\Http\Controllers\Security\RoleController;
+use App\Http\Controllers\Security\RolePermission;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WhatsAppController;
-use App\Http\Controllers\SettingController;
-use App\Models\RencanaPemupukan;
 use Illuminate\Support\Facades\Artisan;
 // Packages
 use Illuminate\Support\Facades\Route;
@@ -29,14 +31,13 @@ use Illuminate\Support\Facades\Route;
 | routes are loaded by the RouteServiceProvider within a group which
 | contains the "web" middleware group. Now create something great!
 |
-*/
+ */
 
 require __DIR__ . '/auth.php';
 
 Route::get('/storage', function () {
     Artisan::call('storage:link');
 });
-
 
 //Landing-Pages Routes
 // Route::group(['prefix' => 'landing-pages'], function () {
@@ -67,13 +68,9 @@ Route::get('/uisheet', [HomeController::class, 'uisheet'])->name('uisheet');
 //                 ->middleware('guest')
 //                 ->name('login');
 
-
 Route::get('/api/users', [UserController::class, 'getUsers']);
 
-
-
-
-Route::group(['middleware' => ['auth', 'cors']], function () {  
+Route::group(['middleware' => ['auth', 'cors']], function () {
 
     // Permission Module
     Route::get('/role-permission', [RolePermission::class, 'index'])->name('role.permission.list');
@@ -99,10 +96,6 @@ Route::group(['middleware' => ['auth', 'cors']], function () {
 
     Route::get('/data-realisasi-pemupukan', [PemupukanController::class, 'getPemupukanComparison'])->name('data-realisasi-pemupukan');
 
-
-
-
-
     // setting routes
     Route::resource('setting', SettingController::class);
 
@@ -121,13 +114,18 @@ Route::group(['middleware' => ['auth', 'cors']], function () {
     // Route::post('rencana-pemupukan/import', [RencanaPemupukanController::class, 'import'])->name('rencana-pemupukan.import');
     Route::resource('rencana-pemupukan', RencanaPemupukanController::class);
 
-
-
-
     // rencana realisasi pemupukan
     Route::get('rencana-realisasi-pemupukan/upload', [RencanaRealisasiPemupukanController::class, 'upload'])->name('rencana-realisasi-pemupukan.upload');
     Route::get('rencana-realisasi-pemupukan/data-table', [RencanaRealisasiPemupukanController::class, 'fetchData'])->name('rencana-realisasi.fetchdata');
     Route::resource('rencana-realisasi-pemupukan', RencanaRealisasiPemupukanController::class);
+    // kebun
+    Route::resource('ren-rel-pem-keb', RencanaRealisasiPemupukanKebunController::class);
+    // afdeling
+    Route::resource('ren-rel-pem-afd', RencanaRealisasiPemupukanAfdController::class);
+    // afdeling
+    Route::resource('ren-rel-pem-tt', RencanaRealisasiPemupukanTTController::class);
+    // afdeling
+    Route::resource('ren-rel-pem-jp', RencanaRealisasiPemupukanJPController::class);
     // jenis pupuk
     Route::resource('jenis-pupuk', JenisPupukController::class);
     // Route::resource('whatsapp-setting', JenisPupukController::class);
@@ -143,7 +141,6 @@ Route::group(['middleware' => ['auth', 'cors']], function () {
     Route::get('/api/blok/{regional}/{kebun}/{afdeling}', [PemupukanController::class, 'getBlokByAfdeling']);
     Route::get('/api/tahuntanam/{regional}/{kebun}/{afdeling}', [PemupukanController::class, 'getDetailByTahunTanam']);
     Route::get('/api/detail/{regional}/{kebun}/{afdeling}/{blok}', [PemupukanController::class, 'getDetailByBlok']);
-
 
     //return data of jenis pupuk
     Route::get('/api/jenis-pupuk', [JenisPupukController::class, 'getJenisPupuk']);
@@ -202,14 +199,12 @@ Route::group(['prefix' => 'auth'], function () {
 //     Route::get('maintenance', [HomeController::class, 'maintenance'])->name('errors.maintenance');
 // });
 
-
 //Forms Pages Routs
 // Route::group(['prefix' => 'forms'], function () {
 //     Route::get('element', [HomeController::class, 'element'])->name('forms.element');
 //     Route::get('wizard', [HomeController::class, 'wizard'])->name('forms.wizard');
 //     Route::get('validation', [HomeController::class, 'validation'])->name('forms.validation');
 // });
-
 
 //Table Page Routs
 // Route::group(['prefix' => 'table'], function () {

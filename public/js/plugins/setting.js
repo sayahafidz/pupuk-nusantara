@@ -39,7 +39,7 @@ Index Of Script
     // Variables
     let sidebarTypeSetting = [];
 
-    //  RTL mode on change offcanvas position change function
+    // RTL mode on change offcanvas position change function
     const rtlModeDefault = (check) => {
         if (check) {
             $('.offcanvas-start').addClass('on-rtl start').removeClass('offcanvas-start')
@@ -56,16 +56,16 @@ Index Of Script
 
     // On Page Load Active Function
     const checkSettingMenu = (type, name, value, data) => {
-        if(data == 'addedClass'){
+        if (data == 'addedClass') {
             document.querySelectorAll(`[data-setting="${type}"][data-name="${name}"].active`).forEach((el) => {
                 el.classList.remove('active')
             });
         }
-        if(data == 'noClass'){
-            const dataREmove = `[data-setting="${type}"][data-name="${name}"]`;
+        if (data == 'noClass') {
+            const dataRemove = `[data-setting="${type}"][data-name="${name}"]`;
             const dataAdd = `[data-setting="${type}"][data-name="${name}"][data-value="${value}"]`;
-            
-            document.querySelectorAll(dataREmove).forEach((el) => {
+
+            document.querySelectorAll(dataRemove).forEach((el) => {
                 el.classList.remove('active')
             });
             document.querySelectorAll(dataAdd).forEach((el) => {
@@ -89,28 +89,28 @@ Index Of Script
     const changeMode = (type, value, target) => {
         let detailObj = {}
         if (type == 'color-mode') {
-            detailObj = {dark: value}
+            detailObj = { dark: value }
             document.querySelector('body').classList.add(value)
         }
         if (type == 'dir-mode') {
-            detailObj = {dir: value}
-            document.querySelector('html').setAttribute('dir',value)
+            detailObj = { dir: value }
+            document.querySelector('html').setAttribute('dir', value)
         }
         if (type == 'sidebar') {
-            detailObj = {'sidebar-color': value}            
-           const sidebarclass= document.querySelector('.sidebar-default')
-           if(sidebarclass !== null && sidebarclass !== undefined){
+            detailObj = { 'sidebar-color': value }
+            const sidebarclass = document.querySelector('.sidebar-default')
+            if (sidebarclass !== null && sidebarclass !== undefined) {
                 sidebarclass.classList.add(value)
-           }
+            }
         }
-        const event = new CustomEvent("ChangeMode", {detail: detailObj });
+        const event = new CustomEvent("ChangeMode", { detail: detailObj });
         document.dispatchEvent(event);
     }
 
     // Page on load function
     const updateMode = () => {
-        // Change Mode Custom Event Listners
-        document.addEventListener('ChangeMode',(e) => {
+        // Change Mode Custom Event Listeners
+        document.addEventListener('ChangeMode', (e) => {
             if (e.detail.dir === 'rtl' || e.detail.dir === 'ltr') {
                 rtlModeDefault(true)
             }
@@ -120,33 +120,38 @@ Index Of Script
         })
 
         // For Dark Mode
-        const colorMode =  sessionStorage.getItem('color-mode')
-        if(colorMode !== null && colorMode !== undefined) {
-            document.body.classList.remove('dark')
+        const colorMode = sessionStorage.getItem('color-mode')
+        if (colorMode !== null && colorMode !== undefined) {
+            document.body.classList.remove('dark', 'auto') // Remove any existing modes
             document.body.classList.add(colorMode)
             darkMode()
             checkSettingMenu('color-mode', 'color', colorMode, 'addedClass')
+        } else {
+            // Set default to dark mode if no color mode is stored
+            document.body.classList.add('dark')
+            sessionStorage.setItem('color-mode', 'dark')
+            checkSettingMenu('color-mode', 'color', 'dark', 'addedClass')
         }
 
         // For RTL Mode
-        const dirMode =  sessionStorage.getItem('dir-mode')
-        if(dirMode !== null && dirMode !== undefined && dirMode !== 'ltr') {
+        const dirMode = sessionStorage.getItem('dir-mode')
+        if (dirMode !== null && dirMode !== undefined && dirMode !== 'ltr') {
             checkSettingMenu('dir-mode', 'dir', dirMode, 'addedClass')
             changeMode('dir-mode', dirMode)
         }
 
         // For Sidebar Color
-        const sidebarColors =  sessionStorage.getItem('sidebar')
-        if(sidebarColors !== null && sidebarColors !== undefined) {
+        const sidebarColors = sessionStorage.getItem('sidebar')
+        if (sidebarColors !== null && sidebarColors !== undefined) {
             checkSettingMenu('sidebar', 'sidebar-color', sidebarColors, 'addedClass')
             changeMode('sidebar', sidebarColors)
         }
 
         // For Sidebar Types
         const sidebarTypeSession = sessionStorage.getItem('sidebarType')
-        if(sidebarTypeSession !== null && sidebarTypeSession !== undefined) {
+        if (sidebarTypeSession !== null && sidebarTypeSession !== undefined) {
             sidebarTypeSetting = JSON.parse(sidebarTypeSession)
-            Array.from(sidebarTypeSetting,(type) => {
+            Array.from(sidebarTypeSetting, (type) => {
                 document.querySelectorAll(`[data-setting="sidebar"][data-name="sidebar-type"][data-value="${type}"]`).forEach((el) => {
                     el.classList.add('active')
                 });
@@ -155,8 +160,8 @@ Index Of Script
         }
 
         // For Sidebar Active Style
-        const allActiveType =  sessionStorage.getItem('sidebar-style')
-        if(allActiveType !== null && allActiveType !== undefined) {
+        const allActiveType = sessionStorage.getItem('sidebar-style')
+        if (allActiveType !== null && allActiveType !== undefined) {
             document.querySelector('.sidebar').classList.remove('navs-rounded-all')
             document.querySelector('.sidebar').classList.add(`${allActiveType}`)
             checkSettingMenu('sidebar', 'sidebar-item', allActiveType, 'addedClass')
@@ -165,12 +170,12 @@ Index Of Script
 
         // For Navbar & Header Style
         const allNavbarType = sessionStorage.getItem('navbarTypes')
-        if(allNavbarType !== null && allNavbarType !== undefined){
-            if(allNavbarType == 'nav-glass' || allNavbarType == 'navs-sticky' || allNavbarType == 'navs-transparent'){
+        if (allNavbarType !== null && allNavbarType !== undefined) {
+            if (allNavbarType == 'nav-glass' || allNavbarType == 'navs-sticky' || allNavbarType == 'navs-transparent') {
                 document.querySelector('.iq-navbar').classList.add(`${allNavbarType}`)
             }
-            if(allNavbarType == 'navs-bg-color'){
-                document.querySelector('.iq-navbar').classList.remove('nav-glass','navs-sticky','navs-transparent')
+            if (allNavbarType == 'navs-bg-color') {
+                document.querySelector('.iq-navbar').classList.remove('nav-glass', 'navs-sticky', 'navs-transparent')
                 document.querySelector('.iq-navbar-header').classList.add(`${allNavbarType}`)
             }
             checkSettingMenu('navbar', 'navbar-type', allNavbarType, 'noClass')
@@ -179,7 +184,7 @@ Index Of Script
 
     updateMode()
 
-    //dark-mode & light-mode
+    // Dark-mode & light-mode
     const colorMode = document.querySelectorAll('[data-setting="color-mode"][data-name="color"]')
     Array.from(colorMode, (mode) => {
         mode.addEventListener('click', (e) => {
@@ -194,7 +199,7 @@ Index Of Script
         })
     })
 
-    //rtl & ltr
+    // RTL & LTR
     const dirMode = document.querySelectorAll('[data-setting="dir-mode"][data-name="dir"]')
     Array.from(dirMode, (mode) => {
         mode.addEventListener('click', (e) => {
@@ -208,8 +213,8 @@ Index Of Script
             }
         })
     })
-    
-    //Sidebar Color
+
+    // Sidebar Color
     const sidebarColors = document.querySelectorAll('[data-setting="sidebar"][data-name="sidebar-color"]')
     Array.from(sidebarColors, (mode) => {
         mode.addEventListener('click', (e) => {
@@ -236,7 +241,6 @@ Index Of Script
                 if (sidebarType.getAttribute('data-extra-value') !== null) {
                     document.querySelector('.sidebar-default').classList.remove(sidebarType.getAttribute('data-extra-value'))
                     document.querySelector(`[data-value="${sidebarType.getAttribute('data-extra-value')}"]`).classList.remove('active')
-
                     const sidebarExtraTypeIndexOf = sidebarTypeSetting.findIndex(type => type === sidebarType.getAttribute('data-extra-value'))
                     sidebarTypeSetting.splice(sidebarExtraTypeIndexOf, 1)
                 }
@@ -249,7 +253,7 @@ Index Of Script
                 if (sidebarType.getAttribute('data-extra-value') !== null) {
                     document.querySelector('.sidebar-default').classList.add(sidebarType.getAttribute('data-extra-value'))
                     Array.from(document.querySelectorAll(`[data-value="${sidebarType.getAttribute('data-extra-value')}"]`), (el) => el.classList.add('active'))
-                    if(sidebarTypeSetting.indexOf(sidebarType.getAttribute('data-extra-value')) === -1) {
+                    if (sidebarTypeSetting.indexOf(sidebarType.getAttribute('data-extra-value')) === -1) {
                         sidebarTypeSetting.push(sidebarType.getAttribute('data-extra-value'))
                     }
                 }
@@ -258,11 +262,11 @@ Index Of Script
         })
     })
 
-    //Sidebar Active Style 
+    // Sidebar Active Style 
     const allActiveType = document.querySelectorAll('[data-setting="sidebar"][data-name="sidebar-item"]')
     Array.from(allActiveType, (activeStyle) => {
         activeStyle.addEventListener('click', (e) => {
-            if(!activeStyle.classList.contains('active')){
+            if (!activeStyle.classList.contains('active')) {
                 Array.from(allActiveType, (el) => {
                     el.classList.remove('active')
                     document.querySelector('.sidebar-default').classList.remove(el.getAttribute('data-value'))
@@ -294,63 +298,58 @@ Index Of Script
     const defaultNavbarType = document.querySelector('[data-setting="navbar"][data-name="navbar-default"]')
     if (defaultNavbarType !== null) {
         defaultNavbarType.addEventListener("click", (e) => {
-            document.querySelector('.iq-navbar').classList.remove('nav-glass','navs-sticky', 'navs-transparent')
+            document.querySelector('.iq-navbar').classList.remove('nav-glass', 'navs-sticky', 'navs-transparent')
             document.querySelector('.iq-navbar-header').classList.remove('navs-bg-color')
             sessionStorage.setItem('navbarTypes', '')
         })
     }
-   
+
     // For colorChange Mode
-    const customizerMode = (custombodyclass,colors,colorInfo) => {
-    document.querySelector('body').classList.add(`${custombodyclass}`)
-    sessionStorage.setItem('colorcustomchart-mode', getComputedStyle(document.body).getPropertyValue('--bs-primary'))
-    document.documentElement.style.setProperty('--bs-info', colors);
-    const color = sessionStorage.getItem('colorcustomchart-mode')
-    if(color !== 'null' && color !== undefined && color !== ''){
-    const event = new CustomEvent("ColorChange", {detail :{detail1:color.trim(), detail2:colors.trim()}});
-    document.dispatchEvent(event);
-    }
-    else{
-    const event = new CustomEvent("ColorChange", {detail :{detail1:colorInfo.trim(), detail2:colors.trim()}});
-    document.dispatchEvent(event);
-    }
-    const elements = document.querySelectorAll('[data-setting="color-mode1"][data-name="color"]')
-    Array.from(elements, (mode) => {
-        const colorclass = mode.getAttribute('data-value');
-        if(colorclass === custombodyclass ){
-            mode.classList.add('active')
+    const customizerMode = (custombodyclass, colors, colorInfo) => {
+        document.querySelector('body').classList.add(`${custombodyclass}`)
+        sessionStorage.setItem('colorcustomchart-mode', getComputedStyle(document.body).getPropertyValue('--bs-primary'))
+        document.documentElement.style.setProperty('--bs-info', colors);
+        const color = sessionStorage.getItem('colorcustomchart-mode')
+        if (color !== 'null' && color !== undefined && color !== '') {
+            const event = new CustomEvent("ColorChange", { detail: { detail1: color.trim(), detail2: colors.trim() } });
+            document.dispatchEvent(event);
+        } else {
+            const event = new CustomEvent("ColorChange", { detail: { detail1: colorInfo.trim(), detail2: colors.trim() } });
+            document.dispatchEvent(event);
         }
-        else{
-            mode.classList.remove('active')
-        }
-    })
+        const elements = document.querySelectorAll('[data-setting="color-mode1"][data-name="color"]')
+        Array.from(elements, (mode) => {
+            const colorclass = mode.getAttribute('data-value');
+            if (colorclass === custombodyclass) {
+                mode.classList.add('active')
+            } else {
+                mode.classList.remove('active')
+            }
+        })
     }
 
     const elements = document.querySelectorAll('[data-setting="color-mode1"][data-name="color"]')
     Array.from(elements, (mode) => {
-    mode.addEventListener('click', (e) => {
-        Array.from(elements, (el) => {
-            el.classList.remove('active')
-            document.querySelector('body').classList.remove(el.getAttribute('data-value'))
-        })
-        sessionStorage.setItem('colorcustom-mode', mode.getAttribute('data-value'))
-        sessionStorage.setItem('colorcustominfo-mode', mode.getAttribute('data-info'))
-        
-        mode.classList.add('active')
-        const colors = mode.getAttribute('data-info');
-        const color = getComputedStyle(document.body).getPropertyValue('--bs-primary');
-        customizerMode(mode.getAttribute('data-value'),colors,color)
-        
+        mode.addEventListener('click', (e) => {
+            Array.from(elements, (el) => {
+                el.classList.remove('active')
+                document.querySelector('body').classList.remove(el.getAttribute('data-value'))
+            })
+            sessionStorage.setItem('colorcustom-mode', mode.getAttribute('data-value'))
+            sessionStorage.setItem('colorcustominfo-mode', mode.getAttribute('data-info'))
+
+            mode.classList.add('active')
+            const colors = mode.getAttribute('data-info');
+            const color = getComputedStyle(document.body).getPropertyValue('--bs-primary');
+            customizerMode(mode.getAttribute('data-value'), colors, color)
         })
     })
-    
+
     const custombodyclass = sessionStorage.getItem('colorcustom-mode')
     const colors = sessionStorage.getItem('colorcustominfo-mode')
     const color = sessionStorage.getItem('colorcustomchart-mode')
-    if(custombodyclass !== null && custombodyclass !== undefined && colors !== null && colors !== undefined){
-        customizerMode(custombodyclass,colors,color)     
+    if (custombodyclass !== null && custombodyclass !== undefined && colors !== null && colors !== undefined) {
+        customizerMode(custombodyclass, colors, color)
     }
-
-    
 
 })()

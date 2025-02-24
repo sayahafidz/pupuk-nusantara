@@ -35,5 +35,6 @@ class RencanaPemupukan extends Model
         'jumlah_pupuk',
         'luas_pemupukan', // kilogram pupuk
         'semester_pemupukan',
+        'plant',
     ];
 }

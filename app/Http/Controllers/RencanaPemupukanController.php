@@ -2,22 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\RencanaPemupukan;
 use App\DataTables\RencanaPemupukanDataTable;
-use App\Http\Requests\RencanaPemupukanRequest;
 use App\Helpers\AuthHelper;
+use App\Http\Requests\RencanaPemupukanRequest;
 use App\Models\JenisPupuk;
 use App\Models\MasterData;
-use Spatie\Permission\Models\Role;
+use App\Models\RencanaPemupukan;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 class RencanaPemupukanController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * 
+     *
      * @return \Illuminate\Http\Response
      */
     public function index(RencanaPemupukanDataTable $dataTable)
@@ -26,7 +24,7 @@ class RencanaPemupukanController extends Controller
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
         $headerAction = '<a href="' . route('rencana-pemupukan.create') . '" class="btn btn-sm btn-primary">Add</a>'
-            . ' <a href="' . route('rencana-pemupukan.upload') . '" class="btn btn-sm btn-success">Upload</a>';
+        . ' <a href="' . route('rencana-pemupukan.upload') . '" class="btn btn-sm btn-success">Upload</a>';
 
         $regionals = RencanaPemupukan::select('regional')->distinct()->pluck('regional');
         $kebuns = RencanaPemupukan::select('kebun')->distinct()->pluck('kebun');
@@ -47,7 +45,6 @@ class RencanaPemupukanController extends Controller
         ));
     }
 
-
     /**
      * Show the form for creating a new resource.
      *
@@ -63,7 +60,6 @@ class RencanaPemupukanController extends Controller
 
         return view('rencana-pemupukan.input-pemupukan', compact('regions', 'jenisPupuk'));
     }
-
 
     /**
      * Show the form for creating a new resource.
@@ -132,7 +128,6 @@ class RencanaPemupukanController extends Controller
         return response()->json($detail);
     }
 
-
     public function import(Request $request)
     {
         $validated = $request->validate([
@@ -148,6 +143,7 @@ class RencanaPemupukanController extends Controller
 
         foreach ($parsedData as $row) {
             try {
+                
                 // Assuming that the data is already pre-processed and grouped by fertilizer columns
                 $batchData[] = [
                     'id_pupuk' => $jenisPupukMap[$row['jenis_pupuk']] ?? null, // Get id_pupuk
@@ -162,6 +158,7 @@ class RencanaPemupukanController extends Controller
                     'jumlah_pupuk' => $row['jumlah_pupuk'],
                     'luas_pemupukan' => 0, // Adjust or calculate based on your requirements
                     'semester_pemupukan' => $row['semester_pemupukan'],
+                    'plant' => $row['plant'], // Set plant value later
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -172,13 +169,13 @@ class RencanaPemupukanController extends Controller
 
         if (!empty($batchData)) {
             // Split the batch data into smaller chunks
-            $chunkSize = 500;  // You can adjust this size based on your needs
+            $chunkSize = 500; // You can adjust this size based on your needs
             $chunks = array_chunk($batchData, $chunkSize);
 
             try {
                 foreach ($chunks as $chunk) {
                     Log::info('Inserting chunk with ' . count($chunk) . ' records.');
-                    RencanaPemupukan::insert($chunk);  // Insert each chunk
+                    RencanaPemupukan::insert($chunk); // Insert each chunk
                 }
             } catch (\Exception $e) {
                 Log::error('Error inserting data:', ['error' => $e->getMessage()]);
@@ -188,7 +185,6 @@ class RencanaPemupukanController extends Controller
 
         return response()->json(['message' => 'Data imported and saved successfully!']);
     }
-
 
     // upload data
     public function upload()
@@ -218,7 +214,7 @@ class RencanaPemupukanController extends Controller
         // Save user Profile data...
         $user->userProfile()->create($request->userProfile);
 
-        return redirect()->route('users.index')->withSuccess(__('message.msg_added', ['name' => __('users.store')]));
+        return redirect()->route('users.index')->withSuccess(__('Data Berhasil Di Tambahkan', ['name' => __('users.store')]));
     }
 
     /**
@@ -229,11 +225,9 @@ class RencanaPemupukanController extends Controller
      */
     public function show($id)
     {
-        $data = RencanaPemupukan::with('userProfile', 'roles')->findOrFail($id);
+        $data = RencanaPemupukan::findOrFail($id);
 
-        $profileImage = getSingleMedia($data, 'profile_image');
-
-        return view('users.profile', compact('data', 'profileImage'));
+        return view('rencana-pemupukan.form', compact('data', 'profileImage'));
     }
 
     /**
@@ -244,15 +238,11 @@ class RencanaPemupukanController extends Controller
      */
     public function edit($id)
     {
-        $data = RencanaPemupukan::with('userProfile', 'roles')->findOrFail($id);
+        $data = RencanaPemupukan::findOrFail($id);
+        $regions = RencanaPemupukan::distinct()->orderBy('regional', 'asc')->pluck('regional');
+        $jenisPupuk = JenisPupuk::all();
 
-        $data['user_type'] = $data->roles->pluck('id')[0] ?? null;
-
-        $roles = Role::where('status', 1)->get()->pluck('title', 'id');
-
-        $profileImage = getSingleMedia($data, 'profile_image');
-
-        return view('users.form', compact('data', 'id', 'roles', 'profileImage'));
+        return view('rencana-pemupukan.form', compact('data', 'regions', 'jenisPupuk'));
     }
 
     /**
@@ -262,36 +252,65 @@ class RencanaPemupukanController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(RencanaPemupukanRequest $request, $id)
+    public function update(Request $request, $id)
     {
-        // dd($request->all());
-        $user = RencanaPemupukan::with('userProfile')->findOrFail($id);
+        // Validate the request data
+        $validatedData = $request->validate([
+            'regional' => 'required|string',
+            'kebun' => 'required|string',
+            'afdeling' => 'required|string',
+            'blok' => 'required|string',
+            'tahun_tanam' => 'nullable|string',
+            'luas_blok' => 'nullable|numeric',
+            'jumlah_pokok' => 'nullable|integer',
+            'jenis_pupuk' => 'required|integer',
+            'jumlah_pupuk' => 'required|numeric',
+            'luas_pemupukan' => 'required|numeric',
+            'semester_pemupukan' => 'required|in:1,2',
+        ]);
 
-        $role = Role::find($request->user_role);
-        if (env('IS_DEMO')) {
-            if ($role->name === 'admin' && $user->user_type === 'admin') {
-                return redirect()->back()->with('error', 'Permission denied');
-            }
-        }
-        $user->assignRole($role->name);
+        // Get jenis pupuk data
+        $jenisPupuk = JenisPupuk::findOrFail($validatedData['jenis_pupuk']);
+        $namaPupuk = $jenisPupuk->nama_pupuk;
 
-        $request['password'] = $request->password != '' ? bcrypt($request->password) : $user->password;
+        $regional = $validatedData['regional'];
+        $kebun = $validatedData['kebun'];
+        $afdeling = $validatedData['afdeling'];
+        $blok = $validatedData['blok'];
 
-        // User user data...
-        $user->fill($request->all())->update();
+        // Fetch the existing RencanaPemupukan record
+        $data = RencanaPemupukan::findOrFail($id);
+        $oldPlant = $data->plant; // Store the current plant value
 
-        // Save user image...
-        if (isset($request->profile_image) && $request->profile_image != null) {
-            $user->clearMediaCollection('profile_image');
-            $user->addMediaFromRequest('profile_image')->toMediaCollection('profile_image');
-        }
+        // Fetch the plant value from MasterData
+        $masterData = MasterData::where('rpc', $regional)
+            ->where('kode_kebun', $kebun)
+            ->where('afdeling', $afdeling)
+            ->where('no_blok', $blok)
+            ->first();
 
-        // user profile data....
-        $user->userProfile->fill($request->userProfile)->update();
+        // Set $plant: use the new value if found, otherwise keep the old value
+        $plant = $masterData ? $masterData->plant : $oldPlant;
 
-        if (auth()->check()) {
-            return redirect()->route('users.index')->withSuccess(__('message.msg_updated', ['name' => __('message.user')]));
-        }
-        return redirect()->back()->withSuccess(__('message.msg_updated', ['name' => 'My Profile']));
+        // Update the RencanaPemupukan record
+        $data->update([
+            'regional' => $validatedData['regional'],
+            'kebun' => $validatedData['kebun'],
+            'afdeling' => $validatedData['afdeling'],
+            'blok' => $validatedData['blok'],
+            'tahun_tanam' => $validatedData['tahun_tanam'],
+            'luas_blok' => $validatedData['luas_blok'],
+            'jumlah_pokok' => $validatedData['jumlah_pokok'],
+            'jenis_pupuk' => $namaPupuk,
+            'jumlah_pupuk' => $validatedData['jumlah_pupuk'],
+            'luas_pemupukan' => $validatedData['luas_pemupukan'],
+            'semester_pemupukan' => $validatedData['semester_pemupukan'],
+            'plant' => $plant,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data updated successfully!',
+        ]);
     }
 }

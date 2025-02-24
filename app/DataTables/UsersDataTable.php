@@ -3,7 +3,6 @@
 namespace App\DataTables;
 
 use App\Models\User;
-use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Services\DataTable;
 
@@ -19,13 +18,7 @@ class UsersDataTable extends DataTable
     {
         return datatables()
             ->eloquent($query)
-            ->editColumn('userProfile.country', function($query) {
-                return $query->userProfile->country ?? '-';
-            })
-            ->editColumn('userProfile.company_name', function($query) {
-                return $query->userProfile->company_name ?? '-';
-            })
-            ->editColumn('status', function($query) {
+            ->editColumn('status', function ($query) {
                 $status = 'warning';
                 switch ($query->status) {
                     case 'active':
@@ -38,27 +31,19 @@ class UsersDataTable extends DataTable
                         $status = 'dark';
                         break;
                 }
-                return '<span class="text-capitalize badge bg-'.$status.'">'.$query->status.'</span>';
+                return '<span class="text-capitalize badge bg-' . $status . '">' . $query->status . '</span>';
             })
-            ->editColumn('created_at', function($query) {
-                return date('Y/m/d',strtotime($query->created_at));
+            ->addColumn('role_title', function ($query) {
+                // Get the first role's title or a default value if no roles exist
+                $role = $query->roles->first();
+                return $role ? $role->title : 'N/A';
             })
-            ->filterColumn('full_name', function($query, $keyword) {
-                $sql = "CONCAT(users.first_name,' ',users.last_name)  like ?";
+            ->filterColumn('full_name', function ($query, $keyword) {
+                $sql = "CONCAT(users.first_name,' ',users.last_name) like ?";
                 return $query->whereRaw($sql, ["%{$keyword}%"]);
             })
-            ->filterColumn('userProfile.company_name', function($query, $keyword) {
-                return $query->orWhereHas('userProfile', function($q) use($keyword) {
-                    $q->where('company_name', 'like', "%{$keyword}%");
-                });
-            })
-            ->filterColumn('userProfile.country', function($query, $keyword) {
-                return $query->orWhereHas('userProfile', function($q) use($keyword) {
-                    $q->where('country', 'like', "%{$keyword}%");
-                });
-            })
             ->addColumn('action', 'users.action')
-            ->rawColumns(['action','status']);
+            ->rawColumns(['action', 'status']);
     }
 
     /**
@@ -69,7 +54,7 @@ class UsersDataTable extends DataTable
      */
     public function query()
     {
-        $model = User::query()->with('userProfile');
+        $model = User::query()->with(['userProfile', 'roles']); // Eager load roles
         return $this->applyScopes($model);
     }
 
@@ -81,15 +66,14 @@ class UsersDataTable extends DataTable
     public function html()
     {
         return $this->builder()
-                    ->setTableId('dataTable')
-                    ->columns($this->getColumns())
-                    ->minifiedAjax()
-                    ->dom('<"row align-items-center"<"col-md-2" l><"col-md-6" B><"col-md-4"f>><"table-responsive my-3" rt><"row align-items-center" <"col-md-6" i><"col-md-6" p>><"clear">')
-
-                    ->parameters([
-                        "processing" => true,
-                        "autoWidth" => false,
-                    ]);
+            ->setTableId('dataTable')
+            ->columns($this->getColumns())
+            ->minifiedAjax()
+            ->dom('<"row align-items-center"<"col-md-2" l><"col-md-6" B><"col-md-4"f>><"table-responsive my-3" rt><"row align-items-center" <"col-md-6" i><"col-md-6" p>><"clear">')
+            ->parameters([
+                "processing" => true,
+                "autoWidth" => false,
+            ]);
     }
 
     /**
@@ -100,21 +84,18 @@ class UsersDataTable extends DataTable
     protected function getColumns()
     {
         return [
-            ['data' => 'id', 'name' => 'id', 'title' => 'id'],
+            ['data' => 'id', 'name' => 'id', 'title' => 'ID'],
             ['data' => 'full_name', 'name' => 'full_name', 'title' => 'FULL NAME', 'orderable' => false],
             ['data' => 'phone_number', 'name' => 'phone_number', 'title' => 'Phone Number'],
             ['data' => 'email', 'name' => 'email', 'title' => 'Email'],
-            ['data' => 'userProfile.country', 'name' => 'userProfile.country', 'title' => 'Country'],
             ['data' => 'status', 'name' => 'status', 'title' => 'Status'],
-            ['data' => 'userProfile.company_name', 'name' => 'userProfile.company_name', 'title' => 'Company'],
-            ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Join Date'],
+            ['data' => 'role_title', 'name' => 'role_title', 'title' => 'User Role'], // Updated to use role_title
             Column::computed('action')
-                  ->exportable(false)
-                  ->printable(false)
-                  ->searchable(false)
-                  ->width(60)
-                  ->addClass('text-center hide-search'),
+                ->exportable(false)
+                ->printable(false)
+                ->searchable(false)
+                ->width(60)
+                ->addClass('text-center hide-search'),
         ];
     }
-
 }

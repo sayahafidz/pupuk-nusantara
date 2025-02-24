@@ -1,7 +1,7 @@
 <x-app-layout :assets="$assets ?? []">
     <div>
         {!! Form::open([
-            'route' => 'rencana-pemupukan.import',
+            'route' => 'rencana-realisasi-pemupukan.import',
             'method' => 'post',
             'enctype' => 'multipart/form-data',
             'id' => 'uploadForm',
@@ -11,8 +11,8 @@
                 <div class="card">
                     <!-- Card Header -->
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="card-title">Upload Rencana Pemupukan Data</h4>
-                        <a href="{{ route('rencana-pemupukan.index') }}" class="btn btn-sm btn-primary"
+                        <h4 class="card-title">Upload Rencana Realisasi Pemupukan Data</h4>
+                        <a href="{{ route('rencana-realisasi-pemupukan.index') }}" class="btn btn-sm btn-primary"
                             role="button">Back</a>
                     </div>
 
@@ -100,7 +100,7 @@
                             const processedData = processFertilizerData(chunkData);
 
                             $.ajax({
-                                url: '{{ route('rencana-pemupukan.import') }}',
+                                url: '{{ route('rencana-realisasi-pemupukan.import') }}',
                                 type: 'POST',
                                 data: {
                                     parsed_data: JSON.stringify(processedData),
@@ -269,7 +269,6 @@
                                 jenis_pupuk: fertilizer.jenis_pupuk,
                                 jumlah_pupuk: amount,
                                 regional: row[11],
-                                plant: row[30],
                                 kebun: row[2],
                                 afdeling: row[5],
                                 blok: row[7],

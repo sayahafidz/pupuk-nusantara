@@ -110,47 +110,18 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="validationCustom10" class="form-label">Luas Pemupukan (HA)</label>
-                                <input type="number" class="form-control" id="validationCustom10" required
-                                    name="luas_pemupukan" style="background-color: green; color: white;">
-                                <div class="invalid-feedback">
-                                    Please provide a valid luas pemupukan.
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="validationCustom10" class="form-label">Tanggal Pemupukan</label>
-                                <input type="date" class="form-control" id="validationCustom11" required
-                                    name="tanggal_pemupukan" style="background-color: green; color: white;"
-                                    value="{{ date('Y-m-d') }}">
-                                <div class="invalid-feedback">
-                                    Please provide a valid tanggal pemupukan.
-                                </div>
-                            </div>
-
-                            {{-- tambah baru --}}
-                            <div class="col-md-6">
-                                <label for="validationCustom12" class="form-label">Cara Pemupukan</label>
-                                <select class="form-select" id="validationCustom12" required name="cara_pemupukan"
+                                <label for="semesterpemupukan" class="form-label">Semester Pemupukan</label>
+                                <select class="form-select" id="semesterpemupukan" required name="semester_pemupukan"
                                     style="background-color: green; color: white;">
-                                    <option selected value="manual">Manual</option>
-                                    <option value="mekanisasi">Mekanisasi</option>
+                                    <option selected disabled value="">Pilih Semester</option>
+                                    <option value="1">Semester 1</option>
+                                    <option value="2">Semester 2</option>
                                 </select>
                                 <div class="invalid-feedback">
-                                    Please provide a valid cara pemupukan.
-                                </div>
-                            </div>
-                            <div class="col-md-6" id="jumlah-tenaga-kerja-container" style="display: none;">
-                                <label for="validationCustom13" class="form-label">Jumlah Tenaga Kerja</label>
-                                <input type="number" class="form-control" id="validationCustom13"
-                                    name="jumlah_tenaga_kerja" min="1"
-                                    style="background-color: green; color: white;">
-                                <div class="invalid-feedback">
-                                    Please provide a valid jumlah tenaga kerja.
+                                    Please choose a username.
                                 </div>
                             </div>
 
-
-                            {{-- apabila memilih mekanisasi, maka akan muncul field baru dengan nama Jumlah Tenaga Kerja (user akan menginput jumlah tenaga kerja dalam integger) --}}
                             <div class="col-12">
                                 <button class="btn btn-primary form-control" id="submit-data" type="button">Simpan
                                     Data
@@ -164,17 +135,6 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script>
-        document.getElementById('validationCustom12').addEventListener('change', function() {
-            const caraPemupukan = this.value;
-            const tenagaKerjaContainer = document.getElementById('jumlah-tenaga-kerja-container');
-            if (caraPemupukan === 'mekanisasi') {
-                tenagaKerjaContainer.style.display = 'block';
-            } else {
-                tenagaKerjaContainer.style.display = 'none';
-            }
-        });
-    </script>
     <script>
         document.getElementById('regional').addEventListener('change', function() {
             const regional = this.value;
@@ -249,8 +209,6 @@
             const jumlahPemupukanValue = document.querySelector('#validationCustom09').value;
             const luasPemupukanValue = document.querySelector('#validationCustom10').value;
             const tanggalPemupukanValue = document.querySelector('#validationCustom11').value;
-            const caraPemupukan = document.querySelector('#validationCustom12').value;
-            const jumlahMekanisasi = document.querySelector('#validationCustom13').value;
 
             // Log the values to see them
             console.log('Regional:', regionalValue);
@@ -264,8 +222,6 @@
             console.log('Jumlah Pemupukan:', jumlahPemupukanValue);
             console.log('Luas Pemupukan:', luasPemupukanValue);
             console.log('Tanggal Pemupukan:', tanggalPemupukanValue);
-            console.log('Cara Pemupukan:', caraPemupukan);
-            console.log('Jumlah Tenaga Kerja:', jumlahMekanisasi);
 
             // Append the additional manually collected values to the FormData object
             formData.append('regional', regionalValue);
@@ -279,8 +235,6 @@
             formData.append('jumlah_pemupukan', jumlahPemupukanValue);
             formData.append('luas_pemupukan', luasPemupukanValue);
             formData.append('tanggal_pemupukan', tanggalPemupukanValue);
-            formData.append('cara_pemupukan', caraPemupukan);
-            formData.append('jumlah_mekanisasi', jumlahMekanisasi);
 
             fetch('{{ route('pemupukan.store') }}', {
                     method: 'POST',

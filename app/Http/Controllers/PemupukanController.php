@@ -3,18 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\DataTables\PemupukanDataTable;
-use Illuminate\Http\Request;
-use App\DataTables\UsersDataTable;
-use App\Models\User;
 use App\Helpers\AuthHelper;
-use Spatie\Permission\Models\Role;
 use App\Http\Requests\UserRequest;
 use App\Models\JenisPupuk;
 use App\Models\MasterData;
 use App\Models\Pemupukan;
 use App\Models\RencanaPemupukan;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class PemupukanController extends Controller
@@ -30,15 +27,13 @@ class PemupukanController extends Controller
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
         $headerAction = '<a href="' . route('input-pemupukan') . '" class="btn btn-sm btn-primary" role="button">Add Pemupukan</a>'
-            . ' <a href="' . route('pemupukan.upload') . '" class="btn btn-sm btn-success" role="button">Upload Pemupukan File</a>';
-
+        . ' <a href="' . route('pemupukan.upload') . '" class="btn btn-sm btn-success" role="button">Upload Pemupukan File</a>';
 
         $regionals = Pemupukan::select('regional')->distinct()->pluck('regional');
         $kebuns = Pemupukan::select('kebun')->distinct()->pluck('kebun');
         $afdelings = Pemupukan::select('afdeling')->distinct()->pluck('afdeling');
         $tahunTanams = Pemupukan::select('tahun_tanam')->distinct()->pluck('tahun_tanam');
         $jenisPupuks = Pemupukan::select('jenis_pupuk')->distinct()->pluck('jenis_pupuk');
-
 
         return $dataTable->render('global.datatable', compact(
             'pageTitle',
@@ -78,7 +73,6 @@ class PemupukanController extends Controller
     {
         // $roles = Role::where('status', 1)->get()->pluck('title', 'id');
 
-
         $regions = MasterData::distinct()->orderBy('rpc', 'asc')->pluck('rpc');
 
         $jenisPupuks = JenisPupuk::distinct()->orderBy('jenis_pupuk', 'asc')->pluck('jenis_pupuk');
@@ -107,7 +101,7 @@ class PemupukanController extends Controller
         // Save user Profile data...
         $user->userProfile()->create($request->userProfile);
 
-        return redirect()->route('users.index')->withSuccess(__('message.msg_added', ['name' => __('users.store')]));
+        return redirect()->route('users.index')->withSuccess(__('Data Berhasil Di Tambahkan', ['name' => __('users.store')]));
     }
 
     /**
@@ -140,7 +134,7 @@ class PemupukanController extends Controller
         $regions = MasterData::distinct()->orderBy('rpc', 'asc')->pluck('rpc');
         $jenisPupuk = JenisPupuk::all();
 
-        return view('pemupukan.input-pemupukan', compact('data', 'regions', 'jenisPupuk'));
+        return view('pemupukan.edit-pemupukan', compact('data', 'regions', 'jenisPupuk'));
     }
 
     /**
@@ -150,37 +144,79 @@ class PemupukanController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(UserRequest $request, $id)
+    public function update(Request $request, $id)
     {
-        // dd($request->all());
-        $user = User::with('userProfile')->findOrFail($id);
+        // Validate the request data
+        $validatedData = $request->validate([
+            'regional' => 'required|string',
+            'kebun' => 'required|string',
+            'afdeling' => 'required|string',
+            'blok' => 'required|string',
+            'tahun_tanam' => 'nullable|string',
+            'luas_blok' => 'nullable|numeric',
+            'jumlah_pokok' => 'nullable|integer',
+            'jenis_pupuk' => 'required|integer',
+            'jumlah_pemupukan' => 'required|numeric',
+            'luas_pemupukan' => 'required|numeric',
+            'tanggal_pemupukan' => 'required|date',
+            'cara_pemupukan' => 'required|string',
+            'jumlah_tenaga_kerja' => 'nullable|integer',
+        ]);
 
-        $role = Role::find($request->user_role);
-        if (env('IS_DEMO')) {
-            if ($role->name === 'admin' && $user->user_type === 'admin') {
-                return redirect()->back()->with('error', 'Permission denied');
-            }
-        }
-        $user->assignRole($role->name);
+        // Get jenis pupuk data
+        $jenisPupuk = JenisPupuk::findOrFail($validatedData['jenis_pupuk']);
+        $namaPupuk = $jenisPupuk->nama_pupuk;
 
-        $request['password'] = $request->password != '' ? bcrypt($request->password) : $user->password;
+        $regional = $validatedData['regional'];
+        $kebun = $validatedData['kebun'];
+        $afdeling = $validatedData['afdeling'];
+        $blok = $validatedData['blok'];
 
-        // User user data...
-        $user->fill($request->all())->update();
+        // Fetch the existing Pemupukan record to get the old plant value
+        $data = Pemupukan::findOrFail($id);
+        $oldPlant = $data->plant; // Store the current plant value
 
-        // Save user image...
-        if (isset($request->profile_image) && $request->profile_image != null) {
-            $user->clearMediaCollection('profile_image');
-            $user->addMediaFromRequest('profile_image')->toMediaCollection('profile_image');
-        }
+        // Raw SQL query to fetch only the 'plant' field
+        $result = DB::selectOne(
+            "SELECT plant FROM master_data
+         WHERE rpc = ?
+           AND kode_kebun = ?
+           AND afdeling = ?
+           AND no_blok = ?",
+            [$regional, $kebun, $afdeling, $blok]
+        );
 
-        // user profile data....
-        $user->userProfile->fill($request->userProfile)->update();
+        // Set $plant: use the new value if found, otherwise keep the old value
+        $plant = $result ? $result->plant : $oldPlant;
 
-        if (auth()->check()) {
-            return redirect()->route('users.index')->withSuccess(__('message.msg_updated', ['name' => __('message.user')]));
-        }
-        return redirect()->back()->withSuccess(__('message.msg_updated', ['name' => 'My Profile']));
+        // get by id
+        $oldPemupukan = Pemupukan::findOrFail($id);
+
+        // Debugging output (uncomment if needed)
+        // dd($validatedData, $plant, $namaPupuk);
+
+        // Update the Pemupukan record
+        $data->update([
+            'regional' => $validatedData['regional'] ?? $oldPemupukan->regional,
+            'kebun' => $validatedData['kebun'] ?? $oldPemupukan->kebun,
+            'afdeling' => $validatedData['afdeling'] ?? $oldPemupukan->afdeling,
+            'blok' => $validatedData['blok'] ?? $oldPemupukan->blok,
+            'tahun_tanam' => $validatedData['tahun_tanam'] ?? $oldPemupukan->tahun_tanam,
+            'luas_blok' => $validatedData['luas_blok'] ?? $oldPemupukan->luas_blok,
+            'jumlah_pokok' => $validatedData['jumlah_pokok'] ?? $oldPemupukan->jumlah_pokok,
+            'jenis_pupuk' => $namaPupuk ?? $oldPemupukan->jenis_pupuk,
+            'jumlah_pemupukan' => $validatedData['jumlah_pemupukan'] ?? $oldPemupukan->jumlah_pemupukan,
+            'luas_pemupukan' => $validatedData['luas_pemupukan'] ?? $oldPemupukan->luas_pemupukan,
+            'tanggal_pemupukan' => $validatedData['tanggal_pemupukan'] ?? $oldPemupukan->tanggal_pemupukan,
+            'cara_pemupukan' => $validatedData['cara_pemupukan'] ?? $oldPemupukan->cara_pemupukan,
+            'jumlah_tenaga_kerja' => $validatedData['jumlah_tenaga_kerja'] ?? $oldPemupukan->jumlah_tenaga_kerja,
+            'plant' => $plant ?? $oldPemupukan->plant,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data updated successfully!',
+        ]);
     }
 
     /**
@@ -198,8 +234,6 @@ class PemupukanController extends Controller
             return response()->json(['message' => 'Error occurred while deleting data.'], 500);
         }
     }
-
-
 
     public function getKebun(Request $request)
     {
@@ -223,17 +257,23 @@ class PemupukanController extends Controller
             'jumlah_pemupukan' => 'required|numeric',
             'luas_pemupukan' => 'required|numeric',
             'tanggal_pemupukan' => 'required|date',
+            'cara_pemupukan' => 'required|string|max:255',
+            'jumlah_mekanisasi' => 'required|string|max:255',
         ]);
-
 
         // get jenis pupuk data where id = jenis_pupuk
         $jenisPupuk = JenisPupuk::findOrFail($validatedData['jenis_pupuk']);
         $namaPupuk = $jenisPupuk->nama_pupuk;
 
+        $plant = MasterData::where('rpc', $validatedData['regional'])
+            ->where('nama_kebun', $validatedData['kebun'])
+            ->where('afdeling', $validatedData['afdeling'])
+            ->where('no_blok', $validatedData['blok'])
+            ->firstOrFail();
 
         // Create a new pemupukan record
         $pemupukan = Pemupukan::create([
-            'id_pupuk' =>  $validatedData['jenis_pupuk'],
+            'id_pupuk' => $validatedData['jenis_pupuk'],
             'regional' => $validatedData['regional'],
             'kebun' => $validatedData['kebun'],
             'afdeling' => $validatedData['afdeling'],
@@ -245,6 +285,9 @@ class PemupukanController extends Controller
             'jumlah_pupuk' => $validatedData['jumlah_pemupukan'],
             'luas_pemupukan' => $validatedData['luas_pemupukan'],
             'tgl_pemupukan' => $validatedData['tanggal_pemupukan'],
+            'cara_pemupukan' => $validatedData['cara_pemupukan'],
+            'jumlah_mekanisasi' => $validatedData['jumlah_mekanisasi'],
+            'plant' => $plant->plant,
         ]);
 
         return response()->json([
@@ -270,11 +313,21 @@ class PemupukanController extends Controller
 
     public function getAfdelingByKebunWithCode($regional, $kebun)
     {
-        // Fetch afdeling based on the selected regional and kebun
-        $afdeling = MasterData::where('rpc', $regional)
-            ->where('kode_kebun', $kebun)
+        // Decode URL-encoded values (e.g., %20 becomes a space)
+        $regional = urldecode($regional); // 'RPC3'
+        $kebun = urldecode($kebun); // 'KEBUN INTI/KKPA SEI GARO'
+
+        // Fetch afdeling with case-insensitive matching
+        $afdeling = MasterData::whereRaw('UPPER(rpc) = ?', [strtoupper($regional)])
+            ->whereRaw('UPPER(kode_kebun) = ?', [strtoupper($kebun)])
             ->distinct()
             ->pluck('afdeling');
+
+        // Check if any results were found
+        if ($afdeling->isEmpty()) {
+            return response()->json(['message' => 'No afdelings found for the given regional and kebun'], 404);
+        }
+
         return response()->json($afdeling);
     }
 
@@ -288,7 +341,6 @@ class PemupukanController extends Controller
             ->pluck('tahun_tanam');
         return response()->json($detail);
     }
-
 
     public function getAfdelingByKebun($regional, $kebun)
     {
@@ -332,46 +384,72 @@ class PemupukanController extends Controller
         return response()->json($detail);
     }
 
-
     public function import(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'parsed_data' => 'required|json',
         ]);
 
         $parsedData = json_decode($request->input('parsed_data'), true);
+        if (empty($parsedData)) {
+            return response()->json(['message' => 'No valid data provided for import.'], 400);
+        }
 
         $batchData = [];
-        $fertilizerColumns = [
-            ['jenis_pupuk' => 'NPK 12.12.17.2', 'column_index' => 10],
+        $FertilizerColumns = [
+            ['jenis_pupuk' => 'NPK 12.12.17.2', 'column_index' => 10], // Adjusted to 0-based index
             ['jenis_pupuk' => 'NPK 13.6.27.4', 'column_index' => 11],
             ['jenis_pupuk' => 'Dolomit', 'column_index' => 12],
             ['jenis_pupuk' => 'Mop', 'column_index' => 13],
             ['jenis_pupuk' => 'Urea', 'column_index' => 14],
         ];
 
-        // Fetch all jenis_pupuk data once to reduce queries
-        $jenisPupukMap = JenisPupuk::pluck('id', 'jenis_pupuk');
+        // Fetch jenis_pupuk map once
+        $jenisPupukMap = JenisPupuk::pluck('id', 'jenis_pupuk')->all();
+
+        // Optimize MasterData lookup
+        $uniqueKeys = collect($parsedData)->map(fn($row) => [
+            'rpc' => trim($row[15] ?? ''), // Column Q (index 15) for rpc
+            'kode_kebun' => trim($row[2] ?? ''), // Column C for kebun
+            'afdeling' => trim($row[4] ?? ''), // Column E for afd
+            'no_blok' => trim($row[6] ?? ''), // Column G for no_blok
+        ])->unique(fn($item) => implode('_', $item))->values()->all();
+
+        $masterDataMap = MasterData::whereIn('rpc', array_column($uniqueKeys, 'rpc'))
+            ->whereIn('kode_kebun', array_column($uniqueKeys, 'kode_kebun'))
+            ->whereIn('afdeling', array_column($uniqueKeys, 'afdeling'))
+            ->whereIn('no_blok', array_column($uniqueKeys, 'no_blok'))
+            ->pluck('plant', \DB::raw("CONCAT(rpc, '_', kode_kebun, '_', afdeling, '_', no_blok)"))
+            ->all();
 
         foreach ($parsedData as $row) {
             try {
-                foreach ($fertilizerColumns as $fertilizer) {
-                    $amount = floatval(str_replace(',', '.', $row[$fertilizer['column_index']]));
+                $regional = trim($row[15] ?? ''); // rpc (Q)
+                $kebun = trim($row[2] ?? ''); // kebun (C)
+                $afdeling = trim($row[4] ?? ''); // afd (E)
+                $blok = trim($row[6] ?? ''); // no_blok (G)
+                $plantKey = implode('_', [$regional, $kebun, $afdeling, $blok]);
+                $plant = $masterDataMap[$plantKey] ?? trim($row[16] ?? ''); // Use MasterData or fallback to Excel (R)
 
+                foreach ($FertilizerColumns as $fertilizer) {
+                    $amount = floatval(str_replace(',', '.', $row[$fertilizer['column_index']] ?? 0));
                     if ($amount > 0) {
                         $batchData[] = [
-                            'id_pupuk' => $jenisPupukMap[$fertilizer['jenis_pupuk']] ?? null, // Get id_pupuk
-                            'regional' => trim($row[15]), // Column index for regional
-                            'kebun' => trim($row[2]),
-                            'afdeling' => trim($row[4]),
-                            'blok' => trim($row[6]),
-                            'tahun_tanam' => intval($row[5]),
-                            'luas_blok' => floatval(str_replace(',', '.', $row[7])),
-                            'jumlah_pokok' => intval($row[8]),
+                            'id_pupuk' => $jenisPupukMap[$fertilizer['jenis_pupuk']] ?? null,
+                            'regional' => $regional,
+                            'kebun' => $kebun,
+                            'afdeling' => $afdeling,
+                            'blok' => $blok,
+                            'tahun_tanam' => (int) ($row[5] ?? 0), // tahun_tanam (F)
+                            'luas_blok' => floatval(str_replace(',', '.', $row[7] ?? 0)), // luas (H)
+                            'jumlah_pokok' => (int) ($row[8] ?? 0), // jlh_pokok (I)
                             'jenis_pupuk' => $fertilizer['jenis_pupuk'],
                             'jumlah_pupuk' => $amount,
-                            'luas_pemupukan' => 0, // Adjust or calculate based on your requirements
-                            'tgl_pemupukan' => now(), // Default to current date
+                            'luas_pemupukan' => 0, // Default, adjust if needed
+                            'tgl_pemupukan' => now(), // Default, consider adding to Excel
+                            'cara_pemupukan' => 'Manual', // Default, consider adding to Excel
+                            'jumlah_mekanisasi' => 0, // Default, consider adding to Excel
+                            'plant' => $plant,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];
@@ -382,19 +460,22 @@ class PemupukanController extends Controller
             }
         }
 
-        if (!empty($batchData)) {
-            try {
-                Pemupukan::insert($batchData);
-            } catch (\Exception $e) {
-                Log::error('Error inserting data:', ['error' => $e->getMessage()]);
-                return response()->json(['message' => 'Failed to save data.'], 500);
-            }
+        if (empty($batchData)) {
+            return response()->json(['message' => 'No valid rows to import.'], 400);
         }
 
-        return response()->json(['message' => 'Data imported and saved successfully!']);
+        try {
+            $chunkSize = 500; // Match your upload form’s CHUNK_SIZE
+            foreach (array_chunk($batchData, $chunkSize) as $chunk) {
+                Log::info('Inserting chunk with ' . count($chunk) . ' records.');
+                Pemupukan::insert($chunk);
+            }
+            return response()->json(['message' => 'Data imported and saved successfully!']);
+        } catch (\Exception $e) {
+            Log::error('Error inserting data:', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to save data.', 'error' => $e->getMessage()], 500);
+        }
     }
-
-
 
     // upload data
     public function upload()
@@ -469,7 +550,6 @@ class PemupukanController extends Controller
             'jumlahPupuk' => $jumlahPupuk,
         ]);
     }
-
 
     public function getComparisonDataOfTheChart(Request $request, $regional, $kebun = null, $afdeling = null, $tahun_tanam = null, $jenis_pupuk = null)
     {
@@ -565,14 +645,13 @@ class PemupukanController extends Controller
         if (empty($comparisonData)) {
             return response()->json([
                 'message' => 'No data available for the selected filters',
-                'data' => []
+                'data' => [],
             ]);
         }
 
         // Return the filtered data as a response
         return response()->json($comparisonData);
     }
-
 
     public function getPemupukanComparison(Request $request)
     {
@@ -591,11 +670,25 @@ class PemupukanController extends Controller
         )->groupBy('regional');
 
         // Apply filters to the rencana query
-        if ($regional) $rencanaQuery->where('regional', $regional);
-        if ($kebun) $rencanaQuery->where('kebun', $kebun);
-        if ($afdeling) $rencanaQuery->where('afdeling', $afdeling);
-        if ($jenis_pupuk) $rencanaQuery->where('jenis_pupuk', $jenis_pupuk);
-        if ($tahun_tanam) $rencanaQuery->where('tahun_tanam', $tahun_tanam);
+        if ($regional) {
+            $rencanaQuery->where('regional', $regional);
+        }
+
+        if ($kebun) {
+            $rencanaQuery->where('kebun', $kebun);
+        }
+
+        if ($afdeling) {
+            $rencanaQuery->where('afdeling', $afdeling);
+        }
+
+        if ($jenis_pupuk) {
+            $rencanaQuery->where('jenis_pupuk', $jenis_pupuk);
+        }
+
+        if ($tahun_tanam) {
+            $rencanaQuery->where('tahun_tanam', $tahun_tanam);
+        }
 
         // Fetch the rencana data
         $rencanaData = $rencanaQuery->get();
@@ -608,11 +701,25 @@ class PemupukanController extends Controller
         )->groupBy('regional');
 
         // Apply filters to the realisasi query
-        if ($regional) $realisasiQuery->where('regional', $regional);
-        if ($kebun) $realisasiQuery->where('kebun', $kebun);
-        if ($afdeling) $realisasiQuery->where('afdeling', $afdeling);
-        if ($jenis_pupuk) $realisasiQuery->where('jenis_pupuk', $jenis_pupuk);
-        if ($tahun_tanam) $realisasiQuery->where('tahun_tanam', $tahun_tanam);
+        if ($regional) {
+            $realisasiQuery->where('regional', $regional);
+        }
+
+        if ($kebun) {
+            $realisasiQuery->where('kebun', $kebun);
+        }
+
+        if ($afdeling) {
+            $realisasiQuery->where('afdeling', $afdeling);
+        }
+
+        if ($jenis_pupuk) {
+            $realisasiQuery->where('jenis_pupuk', $jenis_pupuk);
+        }
+
+        if ($tahun_tanam) {
+            $realisasiQuery->where('tahun_tanam', $tahun_tanam);
+        }
 
         // Fetch the realisasi data
         $realisasiData = $realisasiQuery->get();
@@ -633,11 +740,11 @@ class PemupukanController extends Controller
                     ],
                     'percentage' => [
                         'jumlah_pupuk' => $rencana->total_jumlah_pupuk > 0
-                            ? (($regionalRealisasi->total_jumlah_pupuk_realisasi ?? 0) / $rencana->total_jumlah_pupuk) * 100
-                            : 0,
+                        ? (($regionalRealisasi->total_jumlah_pupuk_realisasi ?? 0) / $rencana->total_jumlah_pupuk) * 100
+                        : 0,
                         'luas_blok' => $rencana->total_luas_blok > 0
-                            ? (($regionalRealisasi->total_luas_blok_realisasi ?? 0) / $rencana->total_luas_blok) * 100
-                            : 0,
+                        ? (($regionalRealisasi->total_luas_blok_realisasi ?? 0) / $rencana->total_luas_blok) * 100
+                        : 0,
                     ],
                 ];
             });
@@ -698,14 +805,14 @@ class PemupukanController extends Controller
                 $rencanaJumlah = $data[$semester]['rencana']['jumlah_pupuk'];
                 $realisasiJumlah = $data[$semester]['realisasi']['jumlah_pupuk'];
                 $data[$semester]['percentage']['jumlah_pupuk'] = $rencanaJumlah > 0
-                    ? ($realisasiJumlah / $rencanaJumlah) * 100
-                    : 0;
+                ? ($realisasiJumlah / $rencanaJumlah) * 100
+                : 0;
 
                 $rencanaLuas = $data[$semester]['rencana']['luas_blok'];
                 $realisasiLuas = $data[$semester]['realisasi']['luas_blok'];
                 $data[$semester]['percentage']['luas_blok'] = $rencanaLuas > 0
-                    ? ($realisasiLuas / $rencanaLuas) * 100
-                    : 0;
+                ? ($realisasiLuas / $rencanaLuas) * 100
+                : 0;
             }
         }
 

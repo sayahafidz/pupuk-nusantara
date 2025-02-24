@@ -66,6 +66,7 @@ class MasterDataTable extends DataTable
             ['data' => 'kondisi', 'name' => 'kondisi', 'title' => 'Kondisi', 'orderable' => false],
             ['data' => 'status_umur', 'name' => 'status_umur', 'title' => 'Status Umur'],
             ['data' => 'rpc', 'name' => 'rpc', 'title' => 'RPC'],
+            ['data' => 'plant', 'name' => 'plant', 'title' => 'PLANT'],
             ['data' => 'kode_kebun', 'name' => 'kode_kebun', 'title' => 'Kode Kebun'],
             ['data' => 'nama_kebun', 'name' => 'nama_kebun', 'title' => 'Nama Kebun'],
             ['data' => 'kkl_kebun', 'name' => 'kkl_kebun', 'title' => 'KKL Kebun'],
