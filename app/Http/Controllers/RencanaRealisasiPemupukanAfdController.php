@@ -23,6 +23,15 @@ class RencanaRealisasiPemupukanAfdController extends Controller
         $regionals = RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional');
         $kebuns = RencanaRealisasiPemupukan::select('kebun')->distinct()->pluck('kebun');
 
+        // Define defaults outside AJAX block
+        if ($auth_user->regional !== 'head_office') {
+            $default_regional = $auth_user->regional;
+            $default_kebun = $auth_user->kode_kebun;
+        } else {
+            $default_regional = $request->input('regional');
+            $default_kebun = $request->input('kebun');
+        }
+
         if (request()->ajax()) {
             $query = RencanaRealisasiPemupukan::query();
 
@@ -31,9 +40,19 @@ class RencanaRealisasiPemupukanAfdController extends Controller
                 $query->where('regional', $regional);
             }
 
+            // Apply user auth regional filter if not head_office
+            if ($auth_user->regional !== 'head_office') {
+                $query->where('regional', $auth_user->regional);
+            }
+
             // Apply kebun filter if provided
             if ($kebun = request()->input('kebun')) {
                 $query->where('kebun', $kebun);
+            }
+
+            // Apply user auth regional filter if not head_office
+            if ($auth_user->regional !== 'head_office') {
+                $query->where('kebun', $auth_user->kode_kebun);
             }
 
             $model = $query->select([
@@ -90,7 +109,9 @@ class RencanaRealisasiPemupukanAfdController extends Controller
             'auth_user',
             'assets',
             'regionals',
-            'kebuns'
+            'kebuns',
+            'default_regional',
+            'default_kebun'
         ));
     }
 

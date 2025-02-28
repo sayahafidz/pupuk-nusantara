@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\PemupukanDataTable;
 use App\Helpers\AuthHelper;
 use App\Http\Requests\UserRequest;
 use App\Models\JenisPupuk;
@@ -11,8 +10,10 @@ use App\Models\Pemupukan;
 use App\Models\RencanaPemupukan;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Yajra\DataTables\DataTables;
 
 class PemupukanController extends Controller
 {
@@ -21,7 +22,7 @@ class PemupukanController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(PemupukanDataTable $dataTable)
+    public function index(Request $request)
     {
         $pageTitle = trans('global-message.list_form_title', ['form' => trans('Pemupukan Data')]);
         $auth_user = AuthHelper::authSession();
@@ -29,13 +30,74 @@ class PemupukanController extends Controller
         $headerAction = '<a href="' . route('input-pemupukan') . '" class="btn btn-sm btn-primary" role="button">Add Pemupukan</a>'
         . ' <a href="' . route('pemupukan.upload') . '" class="btn btn-sm btn-success" role="button">Upload Pemupukan File</a>';
 
-        $regionals = Pemupukan::select('regional')->distinct()->pluck('regional');
-        $kebuns = Pemupukan::select('kebun')->distinct()->pluck('kebun');
-        $afdelings = Pemupukan::select('afdeling')->distinct()->pluck('afdeling');
-        $tahunTanams = Pemupukan::select('tahun_tanam')->distinct()->pluck('tahun_tanam');
-        $jenisPupuks = Pemupukan::select('jenis_pupuk')->distinct()->pluck('jenis_pupuk');
+        // Cache dropdown values for 24 hours
+        $regionals = Cache::remember('pemupukan_regionals', 60 * 60 * 24, fn() =>
+            Pemupukan::select('regional')->distinct()->pluck('regional')
+        );
+        $kebuns = Cache::remember('pemupukan_kebuns', 60 * 60 * 24, fn() =>
+            Pemupukan::select('kebun')->distinct()->pluck('kebun')
+        );
+        $afdelings = Cache::remember('pemupukan_afdelings', 60 * 60 * 24, fn() =>
+            Pemupukan::select('afdeling')->distinct()->pluck('afdeling')
+        );
+        $tahunTanams = Cache::remember('pemupukan_tahun_tanams', 60 * 60 * 24, fn() =>
+            Pemupukan::select('tahun_tanam')->distinct()->pluck('tahun_tanam')
+        );
+        $jenisPupuks = Cache::remember('pemupukan_jenis_pupuks', 60 * 60 * 24, fn() =>
+            Pemupukan::select('jenis_pupuk')->distinct()->pluck('jenis_pupuk')
+        );
 
-        return $dataTable->render('global.datatable', compact(
+        // Define defaults outside AJAX block
+        if ($auth_user->regional !== 'head_office') {
+            $default_regional = $auth_user->regional;
+            $default_kebun = $auth_user->kebun;
+        } else {
+            $default_regional = $request->input('regional');
+            $default_kebun = $request->input('kebun'); 
+        }
+
+        if ($request->ajax()) {
+            $query = Pemupukan::query()
+                ->select([
+                    'id',
+                    'regional',
+                    'kebun',
+                    'afdeling',
+                    'blok',
+                    'tahun_tanam',
+                    'jenis_pupuk',
+                    'jumlah_pupuk',
+                    'tgl_pemupukan',
+                    'plant',
+                ]);
+
+            // Apply role-based filtering
+            if ($auth_user->regional !== 'head_office') {
+                $query->where('regional', $default_regional);
+            }
+
+            // Apply filters from DataTables request
+            $request->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
+            $request->whenFilled('kebun', fn($kebun) => $query->where('plant', $kebun));
+            $request->whenFilled('afdeling', fn($afdeling) => $query->where('afdeling', $afdeling));
+            $request->whenFilled('tahun_tanam', fn($tahun_tanam) => $query->where('tahun_tanam', $tahun_tanam));
+            $request->whenFilled('jenis_pupuk', fn($jenis_pupuk) => $query->where('jenis_pupuk', $jenis_pupuk));
+            $request->whenFilled('tgl_pemupukan_start', fn($start) => $query->where('tgl_pemupukan', '>=', $start));
+            $request->whenFilled('tgl_pemupukan_end', fn($end) => $query->where('tgl_pemupukan', '<=', $end));
+
+            return DataTables::of($query)
+                ->setRowId('id')
+                ->editColumn('jumlah_pupuk', fn($row) => number_format($row->jumlah_pupuk, 0, ',', '.') . ' Kg')
+                ->editColumn('tgl_pemupukan', fn($row) => $row->tgl_pemupukan ? date('d-m-Y', strtotime($row->tgl_pemupukan)) : '-')
+                ->addColumn('action', fn($row) => '
+                    <a href="' . route('pemupukan.edit', $row->id) . '" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="#" class="btn btn-sm btn-danger" onclick="deletePemupukan(' . $row->id . ')">Delete</a>
+                ')
+                ->rawColumns(['action'])
+                ->toJson();
+        }
+
+        return view('global.datatable-pemupukan', compact(
             'pageTitle',
             'auth_user',
             'assets',
@@ -44,7 +106,9 @@ class PemupukanController extends Controller
             'kebuns',
             'afdelings',
             'tahunTanams',
-            'jenisPupuks'
+            'jenisPupuks',
+            'default_regional',
+            'default_kebun'
         ));
     }
 
@@ -307,19 +371,19 @@ class PemupukanController extends Controller
     public function getKebunByRegionalWithCode($regional)
     {
         // Fetch kebun based on the selected regional
-        $kebun = MasterData::where('rpc', $regional)->distinct()->pluck('nama_kebun', 'kode_kebun');
+        $kebun = MasterData::where('rpc', $regional)->distinct()->pluck('nama_kebun', 'plant');
         return response()->json($kebun);
     }
 
-    public function getAfdelingByKebunWithCode($regional, $kebun)
+    public function getAfdelingByKebunWithCode($regional, $plant)
     {
         // Decode URL-encoded values (e.g., %20 becomes a space)
         $regional = urldecode($regional); // 'RPC3'
-        $kebun = urldecode($kebun); // 'KEBUN INTI/KKPA SEI GARO'
+        $plant = urldecode($plant); // '1E02'
 
         // Fetch afdeling with case-insensitive matching
         $afdeling = MasterData::whereRaw('UPPER(rpc) = ?', [strtoupper($regional)])
-            ->whereRaw('UPPER(kode_kebun) = ?', [strtoupper($kebun)])
+            ->whereRaw('UPPER(plant) = ?', [strtoupper($plant)])
             ->distinct()
             ->pluck('afdeling');
 
@@ -335,7 +399,7 @@ class PemupukanController extends Controller
     {
         // Fetch the unique detail data for the selected blok
         $detail = MasterData::where('rpc', $regional)
-            ->where('kode_kebun', $kebun)
+            ->where('plant', $kebun)
             ->where('afdeling', $afdeling)
             ->distinct()
             ->pluck('tahun_tanam');

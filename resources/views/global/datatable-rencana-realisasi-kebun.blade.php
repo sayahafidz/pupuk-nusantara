@@ -11,12 +11,19 @@
                     <div class="card-body px-0">
                         <div class="row mb-3 px-3">
                             <div class="col-md-2">
-                                <select id="filter-regional" class="form-control">
+                                <select id="filter-regional" class="form-control"
+                                    {{ $auth_user->regional !== 'head_office' ? 'disabled' : '' }}>
+
                                     <option value="">All Regional</option>
                                     @foreach ($regionals as $regional)
-                                        <option value="{{ $regional }}">{{ $regional }}</option>
+                                        <option value="{{ $regional }}"
+                                            {{ $default_regional == $regional ? 'selected' : '' }}>
+                                            {{ $regional }}
+                                        </option>
                                     @endforeach
                                 </select>
+
+
                             </div>
                         </div>
                         <div class="table-responsive">

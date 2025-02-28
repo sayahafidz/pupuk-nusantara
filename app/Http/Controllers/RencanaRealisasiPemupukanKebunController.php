@@ -22,12 +22,26 @@ class RencanaRealisasiPemupukanKebunController extends Controller
         ];
         $regionals = RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional');
 
+        // Define defaults outside AJAX block
+        if ($auth_user->regional !== 'head_office') {
+            $default_regional = $auth_user->regional;
+            $default_kebun = $auth_user->kebun;
+        } else {
+            $default_regional = $request->input('regional');
+            $default_kebun = $request->input('kebun');
+        }
+
         if (request()->ajax()) {
             $query = RencanaRealisasiPemupukan::query();
 
             // Apply regional filter if provided
             if ($regional = request()->input('regional')) {
                 $query->where('regional', $regional);
+            }
+
+            // Apply user auth regional filter if not head_office
+            if ($auth_user->regional !== 'head_office') {
+                $query->where('regional', $auth_user->regional);
             }
 
             $model = $query->select([
@@ -82,7 +96,9 @@ class RencanaRealisasiPemupukanKebunController extends Controller
             'pageTitle',
             'auth_user',
             'assets',
-            'regionals'
+            'regionals',
+            'default_regional',
+
         ));
     }
 

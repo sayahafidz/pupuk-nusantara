@@ -12,18 +12,22 @@
                     <div class="card-body px-0">
                         <div class="row mb-3 px-3">
                             <div class="col-md-2">
-                                <select id="filter-regional" class="form-control">
+                                <select id="filter-regional" class="form-control"
+                                    {{ $auth_user->regional !== 'head_office' ? 'disabled' : '' }}>
                                     <option value="">All Regional</option>
                                     @foreach ($regionals as $regional)
-                                        <option value="{{ $regional }}">{{ $regional }}</option>
+                                        <option value="{{ $regional }}"
+                                            {{ $default_regional == $regional ? 'selected' : '' }}>
+                                            {{ $regional }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <select id="filter-kebun" class="form-control">
-                                    <option value="">All Kebun</option>
+                                <select id="filter-kebun" class="form-control" <option value="">All Kebun</option>
                                     @foreach ($kebuns as $kebun)
-                                        <option value="{{ $kebun }}">{{ $kebun }}</option>
+                                        <option value="{{ $kebun }}"
+                                            {{ $default_kebun == $kebun ? 'selected' : '' }}>
+                                            {{ $kebun }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -168,14 +172,16 @@
                 });
 
                 // Handle filter changes
-                $('#filter-regional, #filter-kebun, #filter-afdeling, #filter-tahun-tanam, #filter-jenis-pupuk').on('change', function() {
-                    console.log('Regional:', $('#filter-regional').val(),
-                        'Kebun:', $('#filter-kebun').val(),
-                        'Afdeling:', $('#filter-afdeling').val(),
-                        'Tahun Tanam:', $('#filter-tahun-tanam').val(),
-                        'Jenis Pupuk:', $('#filter-jenis-pupuk').val());
-                    table.ajax.reload();
-                });
+                $('#filter-regional, #filter-kebun, #filter-afdeling, #filter-tahun-tanam, #filter-jenis-pupuk').on(
+                    'change',
+                    function() {
+                        console.log('Regional:', $('#filter-regional').val(),
+                            'Kebun:', $('#filter-kebun').val(),
+                            'Afdeling:', $('#filter-afdeling').val(),
+                            'Tahun Tanam:', $('#filter-tahun-tanam').val(),
+                            'Jenis Pupuk:', $('#filter-jenis-pupuk').val());
+                        table.ajax.reload();
+                    });
 
                 console.log('DataTable initialized');
             });

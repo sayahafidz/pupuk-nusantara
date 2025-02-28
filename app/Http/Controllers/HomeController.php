@@ -17,26 +17,56 @@ class HomeController extends Controller
     {
         $assets = ['chart', 'animation'];
 
-        // count all data rencana_pemupukan
-        $rencana_pemupukan = RencanaPemupukan::count();
-        // count all data pemupukan
-        $pemupukan = Pemupukan::count();
-        // count all data jenis_pupuk
-        $jenis_pupuk = JenisPupuk::count();
+        $user = $request->user();
+        $user_type = $user->user_type;
+        $regional = $user->regional;
 
-        // count total jumlah_pupuk pemupukan
-        $jumlah_pupuk = Pemupukan::sum('jumlah_pupuk');
+        if ($user_type == 'admin' && $regional == 'head_office') {
+            // count all data rencana_pemupukan
+            $rencana_pemupukan = RencanaPemupukan::count();
+            // count all data pemupukan
+            $pemupukan = Pemupukan::count();
+            // count all data jenis_pupuk
+            $jenis_pupuk = JenisPupuk::count();
 
-        // count total jumlah_pupuk renacana_pemupukan
-        $jumlah_pupuk_rencana = RencanaPemupukan::sum('jumlah_pupuk');
+            // count total jumlah_pupuk pemupukan
+            $jumlah_pupuk = Pemupukan::sum('jumlah_pupuk');
 
-        // count total users
-        $users = User::count();
+            // count total jumlah_pupuk renacana_pemupukan
+            $jumlah_pupuk_rencana = RencanaPemupukan::sum('jumlah_pupuk');
+
+            // count total users
+            $users = User::count();
+        } elseif ($user_type == 'admin' && $regional != 'head_office') {
+            // count all data rencana_pemupukan by regional
+            $rencana_pemupukan = RencanaPemupukan::where('regional', $regional)->count();
+            // count all data pemupukan by regional
+            $pemupukan = Pemupukan::where('regional', $regional)->count();
+            // count all data jenis_pupuk
+            $jenis_pupuk = JenisPupuk::count();
+
+            // count total jumlah_pupuk pemupukan by regional
+            $jumlah_pupuk = Pemupukan::where('regional', $regional)->sum('jumlah_pupuk');
+
+            // count total jumlah_pupuk renacana_pemupukan by regional
+            $jumlah_pupuk_rencana = RencanaPemupukan::where('regional', $regional)->sum('jumlah_pupuk');
+
+            // count total users by regional
+            $users = User::where('regional', $regional)->count();
+        } else {
+            // handle other user types if necessary
+            $rencana_pemupukan = 0;
+            $pemupukan = 0;
+            $jenis_pupuk = 0;
+            $jumlah_pupuk = 0;
+            $jumlah_pupuk_rencana = 0;
+            $users = 0;
+        }
 
         // get percentage of jumlah_pupuk pemupukan
-        $percentage_pemupukan = ($jumlah_pupuk / $jumlah_pupuk_rencana) * 100;
+        $percentage_pemupukan = ($jumlah_pupuk_rencana > 0) ? ($jumlah_pupuk / $jumlah_pupuk_rencana) * 100 : 0;
 
-        return view('dashboards.dashboard', compact('assets', 'rencana_pemupukan', 'pemupukan', 'jenis_pupuk', 'jumlah_pupuk', 'jumlah_pupuk_rencana', 'percentage_pemupukan', 'users'));
+        return view('dashboards.dashboard', compact('assets', 'rencana_pemupukan', 'pemupukan', 'jenis_pupuk', 'jumlah_pupuk', 'jumlah_pupuk_rencana', 'percentage_pemupukan', 'users', 'user'));
     }
 
     /*

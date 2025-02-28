@@ -18,6 +18,15 @@ class RencanaRealisasiPemupukanJPController extends Controller
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
 
+        // Define defaults outside AJAX block
+        if ($auth_user->regional !== 'head_office') {
+            $default_regional = $auth_user->regional;
+            $default_kebun = $auth_user->kode_kebun;
+        } else {
+            $default_regional = $request->input('regional');
+            $default_kebun = $request->input('kebun');
+        }
+
         // Fetch distinct values for dropdowns
         $regionals = RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional');
         $kebuns = RencanaRealisasiPemupukan::select('kebun')->distinct()->pluck('kebun');
@@ -45,6 +54,16 @@ class RencanaRealisasiPemupukanJPController extends Controller
                 $query->where('jenis_pupuk', $jenis_pupuk);
             }
 
+            // Apply user auth regional filter if not head_office
+            if ($auth_user->regional !== 'head_office') {
+                $query->where('regional', $auth_user->regional);
+            }
+
+            // Apply user auth kebun filter if not head_office
+            if ($auth_user->regional !== 'head_office') {
+                $query->where('kebun', $auth_user->kode_kebun);
+            }
+
             $model = $query->select([
                 'regional',
                 'kebun', // Assuming kebun is still relevant; adjust if not
@@ -57,7 +76,7 @@ class RencanaRealisasiPemupukanJPController extends Controller
                 DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
                 DB::raw("SUM(rencana_total) as rencana_total"),
                 DB::raw("SUM(realisasi_total) as realisasi_total"),
-            ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam','jenis_pupuk');
+            ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam', 'jenis_pupuk');
 
             return DataTables::eloquent($model)
                 ->addColumn('rencana_semester_1', function ($row) {
@@ -104,7 +123,9 @@ class RencanaRealisasiPemupukanJPController extends Controller
             'kebuns',
             'afdelings',
             'jenis_pupuks',
-            'tahun_tanams'
+            'tahun_tanams',
+            'default_regional',
+            'default_kebun'
         ));
     }
 

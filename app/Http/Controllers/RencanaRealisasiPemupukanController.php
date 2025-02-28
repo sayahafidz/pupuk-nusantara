@@ -23,6 +23,10 @@ class RencanaRealisasiPemupukanController extends Controller
         if (request()->ajax()) {
             $query = RencanaRealisasiPemupukan::query();
 
+            if ($auth_user->regional !== 'head_office') {
+                $query->where('regional', $auth_user->regional);
+            }
+
             $model = $query->select([
                 'regional',
                 DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),

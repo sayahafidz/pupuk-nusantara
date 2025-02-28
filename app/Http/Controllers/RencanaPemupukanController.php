@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\RencanaPemupukanDataTable;
 use App\Helpers\AuthHelper;
 use App\Http\Requests\RencanaPemupukanRequest;
 use App\Models\JenisPupuk;
 use App\Models\MasterData;
 use App\Models\RencanaPemupukan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Yajra\DataTables\DataTables;
 
 class RencanaPemupukanController extends Controller
 {
@@ -18,30 +19,78 @@ class RencanaPemupukanController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(RencanaPemupukanDataTable $dataTable)
+    public function index(Request $request)
     {
         $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Pemupukan Data')]);
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
-        $headerAction = '<a href="' . route('rencana-pemupukan.create') . '" class="btn btn-sm btn-primary">Add</a>'
-        . ' <a href="' . route('rencana-pemupukan.upload') . '" class="btn btn-sm btn-success">Upload</a>';
+        $headerAction = '<a href="' . route('rencana-pemupukan.create') . '" class="btn btn-sm btn-primary" role="button">Add</a>'
+        . ' <a href="' . route('rencana-pemupukan.upload') . '" class="btn btn-sm btn-success" role="button">Upload</a>';
 
-        $regionals = RencanaPemupukan::select('regional')->distinct()->pluck('regional');
-        $kebuns = RencanaPemupukan::select('kebun')->distinct()->pluck('kebun');
-        $afdelings = RencanaPemupukan::select('afdeling')->distinct()->pluck('afdeling');
-        $tahunTanams = RencanaPemupukan::select('tahun_tanam')->distinct()->pluck('tahun_tanam');
-        $jenisPupuks = RencanaPemupukan::select('jenis_pupuk')->distinct()->pluck('jenis_pupuk');
+        // Cache dropdown values
+        $regionals = Cache::remember('rencana_pemupukan_regionals', 60 * 60 * 24, fn() =>
+            RencanaPemupukan::select('regional')->distinct()->pluck('regional')->all()
+        );
+        $jenisPupuks = Cache::remember('rencana_pemupukan_jenis_pupuks', 60 * 60 * 24, fn() =>
+            RencanaPemupukan::select('jenis_pupuk')->distinct()->pluck('jenis_pupuk')->all()
+        );
+        $semesterPemupukans = Cache::remember('rencana_pemupukan_semester_pemupukan', 60 * 60 * 24, fn() =>
+            RencanaPemupukan::select('semester_pemupukan')->distinct()->pluck('semester_pemupukan')->all()
+        );
 
-        return $dataTable->render('global.datatable', compact(
+        // Default filters
+        $default_regional = $auth_user->regional !== 'head_office' ? $auth_user->regional : $request->input('regional');
+        $default_plant = $auth_user->regional !== 'head_office' ? $auth_user->kebun : $request->input('plant');
+
+        if ($request->ajax()) {
+            $query = RencanaPemupukan::query()
+                ->select([
+                    'id',
+                    'regional',
+                    'plant',
+                    'kebun',
+                    'afdeling',
+                    'blok',
+                    'tahun_tanam',
+                    'jenis_pupuk',
+                    'jumlah_pupuk',
+                    'semester_pemupukan',
+                ]);
+
+            // Role-based filtering
+            if ($auth_user->regional !== 'head_office') {
+                $query->where('regional', $default_regional);
+            }
+
+            // Apply filters
+            $request->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
+            $request->whenFilled('plant', fn($plant) => $query->where('plant', $plant));
+            $request->whenFilled('afdeling', fn($afdeling) => $query->where('afdeling', $afdeling));
+            $request->whenFilled('tahun_tanam', fn($tahun_tanam) => $query->where('tahun_tanam', $tahun_tanam));
+            $request->whenFilled('jenis_pupuk', fn($jenis_pupuk) => $query->where('jenis_pupuk', $jenis_pupuk));
+            $request->whenFilled('semester_pemupukan', fn($semester) => $query->where('semester_pemupukan', $semester));
+
+            return DataTables::of($query)
+                ->setRowId('id')
+                ->editColumn('jumlah_pupuk', fn($row) => number_format($row->jumlah_pupuk, 0, ',', '.') . ' Kg')
+                ->addColumn('action', fn($row) => '
+                    <a href="' . route('rencana-pemupukan.edit', $row->id) . '" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="#" class="btn btn-sm btn-danger" onclick="deleteRencanaPemupukan(' . $row->id . ')">Delete</a>
+                ')
+                ->rawColumns(['action'])
+                ->toJson();
+        }
+
+        return view('global.datatable-rencana-pemupukan', compact(
             'pageTitle',
             'auth_user',
             'assets',
             'headerAction',
             'regionals',
-            'kebuns',
-            'afdelings',
-            'tahunTanams',
-            'jenisPupuks'
+            'jenisPupuks',
+            'semesterPemupukans',
+            'default_regional',
+            'default_plant'
         ));
     }
 
@@ -89,44 +138,44 @@ class RencanaPemupukanController extends Controller
         }
     }
 
-    public function getKebunByRegional($regional)
-    {
-        // Fetch kebun based on the selected regional
-        $kebun = MasterData::where('rpc', $regional)->distinct()->pluck('nama_kebun');
-        return response()->json($kebun);
-    }
+    // public function getKebunByRegional($regional)
+    // {
+    //     // Fetch kebun based on the selected regional
+    //     $kebun = MasterData::where('rpc', $regional)->distinct()->pluck('nama_kebun');
+    //     return response()->json($kebun);
+    // }
 
-    public function getAfdelingByKebun($regional, $kebun)
-    {
-        // Fetch afdeling based on the selected regional and kebun
-        $afdeling = MasterData::where('rpc', $regional)
-            ->where('nama_kebun', $kebun)
-            ->distinct()
-            ->pluck('afdeling');
-        return response()->json($afdeling);
-    }
+    // public function getAfdelingByKebun($regional, $kebun)
+    // {
+    //     // Fetch afdeling based on the selected regional and kebun
+    //     $afdeling = MasterData::where('rpc', $regional)
+    //         ->where('nama_kebun', $kebun)
+    //         ->distinct()
+    //         ->pluck('afdeling');
+    //     return response()->json($afdeling);
+    // }
 
-    public function getBlokByAfdeling($regional, $kebun, $afdeling)
-    {
-        // Fetch blok based on the selected regional, kebun, and afdeling
-        $blok = MasterData::where('rpc', $regional)
-            ->where('nama_kebun', $kebun)
-            ->where('afdeling', $afdeling)
-            ->distinct()
-            ->pluck('no_blok');
-        return response()->json($blok);
-    }
+    // public function getBlokByAfdeling($regional, $kebun, $afdeling)
+    // {
+    //     // Fetch blok based on the selected regional, kebun, and afdeling
+    //     $blok = MasterData::where('rpc', $regional)
+    //         ->where('nama_kebun', $kebun)
+    //         ->where('afdeling', $afdeling)
+    //         ->distinct()
+    //         ->pluck('no_blok');
+    //     return response()->json($blok);
+    // }
 
-    public function getDetailByBlok($regional, $kebun, $afdeling, $blok)
-    {
-        // Fetch the detail data for the selected blok
-        $detail = MasterData::where('rpc', $regional)
-            ->where('nama_kebun', $kebun)
-            ->where('afdeling', $afdeling)
-            ->where('no_blok', $blok)
-            ->first();
-        return response()->json($detail);
-    }
+    // public function getDetailByBlok($regional, $kebun, $afdeling, $blok)
+    // {
+    //     // Fetch the detail data for the selected blok
+    //     $detail = MasterData::where('rpc', $regional)
+    //         ->where('nama_kebun', $kebun)
+    //         ->where('afdeling', $afdeling)
+    //         ->where('no_blok', $blok)
+    //         ->first();
+    //     return response()->json($detail);
+    // }
 
     public function import(Request $request)
     {
@@ -143,7 +192,7 @@ class RencanaPemupukanController extends Controller
 
         foreach ($parsedData as $row) {
             try {
-                
+
                 // Assuming that the data is already pre-processed and grouped by fertilizer columns
                 $batchData[] = [
                     'id_pupuk' => $jenisPupukMap[$row['jenis_pupuk']] ?? null, // Get id_pupuk
@@ -313,4 +362,92 @@ class RencanaPemupukanController extends Controller
             'message' => 'Data updated successfully!',
         ]);
     }
+
+    public function getKebunByRegional($regional)
+    {
+        // Fetch kebun based on the selected regional
+        $kebun = MasterData::where('rpc', $regional)->distinct()->pluck('nama_kebun');
+        return response()->json($kebun);
+    }
+
+    public function getKebunByRegionalWithCode($regional)
+    {
+        // Fetch kebun based on the selected regional
+        $kebun = MasterData::where('rpc', $regional)->distinct()->pluck('nama_kebun', 'plant');
+        return response()->json($kebun);
+    }
+
+    public function getAfdelingByKebunWithCode($regional, $plant)
+    {
+        // Decode URL-encoded values (e.g., %20 becomes a space)
+        $regional = urldecode($regional); // 'RPC3'
+        $plant = urldecode($plant); // '1E02'
+
+        // Fetch afdeling with case-insensitive matching
+        $afdeling = MasterData::whereRaw('UPPER(rpc) = ?', [strtoupper($regional)])
+            ->whereRaw('UPPER(plant) = ?', [strtoupper($plant)])
+            ->distinct()
+            ->pluck('afdeling');
+
+        // Check if any results were found
+        if ($afdeling->isEmpty()) {
+            return response()->json(['message' => 'No afdelings found for the given regional and kebun'], 404);
+        }
+
+        return response()->json($afdeling);
+    }
+
+    public function getDetailByTahunTanamWithCode($regional, $kebun, $afdeling)
+    {
+        // Fetch the unique detail data for the selected blok
+        $detail = MasterData::where('rpc', $regional)
+            ->where('plant', $kebun)
+            ->where('afdeling', $afdeling)
+            ->distinct()
+            ->pluck('tahun_tanam');
+        return response()->json($detail);
+    }
+
+    public function getAfdelingByKebun($regional, $kebun)
+    {
+        // Fetch afdeling based on the selected regional and kebun
+        $afdeling = MasterData::where('rpc', $regional)
+            ->where('nama_kebun', $kebun)
+            ->distinct()
+            ->pluck('afdeling');
+        return response()->json($afdeling);
+    }
+
+    public function getBlokByAfdeling($regional, $kebun, $afdeling)
+    {
+        // Fetch blok based on the selected regional, kebun, and afdeling
+        $blok = MasterData::where('rpc', $regional)
+            ->where('nama_kebun', $kebun)
+            ->where('afdeling', $afdeling)
+            ->distinct()
+            ->pluck('no_blok');
+        return response()->json($blok);
+    }
+
+    public function getDetailByBlok($regional, $kebun, $afdeling, $blok)
+    {
+        // Fetch the detail data for the selected blok
+        $detail = MasterData::where('rpc', $regional)
+            ->where('nama_kebun', $kebun)
+            ->where('afdeling', $afdeling)
+            ->where('no_blok', $blok)
+            ->first();
+        return response()->json($detail);
+    }
+    public function getDetailByTahunTanam($regional, $kebun, $afdeling)
+    {
+        // Fetch the unique detail data for the selected blok
+        $detail = MasterData::where('rpc', $regional)
+            ->where('nama_kebun', $kebun)
+            ->where('afdeling', $afdeling)
+            ->distinct()
+            ->pluck('tahun_tanam');
+        return response()->json($detail);
+    }
+
 }
