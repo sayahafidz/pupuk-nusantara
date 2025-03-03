@@ -13,7 +13,7 @@ class RencanaRealisasiPemupukanKebunController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
         $auth_user = AuthHelper::authSession();

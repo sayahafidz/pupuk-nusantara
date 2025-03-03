@@ -4,10 +4,13 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
                     <h4 class="card-title">{{ $pageTitle ?? 'List' }}</h4>
+                    <div class="card-action">
+                        {!! $headerAction ?? '' !!}
+                    </div>
                 </div>
                 <div class="card-body px-0">
                     <div class="row mb-3 px-3">
-                        <div class="col-md-2">
+                        <div class="col-md-2 p-3">
                             <select id="filter-regional" class="form-control"
                                 {{ $auth_user->regional !== 'head_office' ? 'disabled' : '' }}>
                                 <option value="">All Regional</option>
@@ -18,29 +21,27 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-2 p-3">
                             <select id="filter-kebun" class="form-control"
                                 {{ $auth_user->regional !== 'head_office' ? 'disabled' : '' }}>
                                 <option value="">All Kebun</option>
                                 <!-- Kebun options will be populated dynamically -->
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-2 p-3">
                             <select id="filter-afdeling" class="form-control">
                                 <option value="">All Afdeling</option>
                                 <!-- Afdeling options will be populated dynamically -->
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-2 p-3">
                             <select id="filter-tahun-tanam" class="form-control">
                                 <option value="">All Tahun Tanam</option>
-                                @foreach ($tahun_tanams as $tahun_tanam)
-                                    <option value="{{ $tahun_tanam }}">{{ $tahun_tanam }}</option>
-                                @endforeach
+                                <!-- Tahun Tanam options will be populated dynamically -->
                             </select>
                         </div>
                     </div>
-                    <div class="table-responsive">
+                    <div class="table-responsive px-4">
                         <table id="dataTable" class="table text-center table-striped w-100"></table>
                     </div>
                 </div>
@@ -49,10 +50,13 @@
     </div>
 
     @push('scripts')
-        <script src="https://cdn.datatables.net/buttons/2.3.2/js/dataTables.buttons.min.js"></script>
+        <!-- DataTables Core and Buttons -->
+        {{-- <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script> --}}
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
         <script>
             $(document).ready(function() {
                 // Load Kebun options based on Regional
@@ -60,13 +64,14 @@
                     if (!regional) {
                         $('#filter-kebun').html('<option value="">All Kebun</option>');
                         $('#filter-afdeling').html('<option value="">All Afdeling</option>');
+                        $('#filter-tahun-tanam').html('<option value="">All Tahun Tanam</option>');
                         return;
                     }
                     fetch(`/api/kebun-code/${encodeURIComponent(regional)}`)
                         .then(response => response.json())
                         .then(data => {
                             let kebunOptions = '<option value="">All Kebun</option>';
-                            const defaultKebun = '{{ $default_plant ?? '' }}';
+                            const defaultKebun = '{{ $default_kebun ?? '' }}';
                             for (let code in data) {
                                 if (data.hasOwnProperty(code)) {
                                     const isSelected = code === defaultKebun ? ' selected' : '';
@@ -74,15 +79,13 @@
                                 }
                             }
                             $('#filter-kebun').html(kebunOptions);
-                            if (defaultKebun) {
-                                $('#filter-kebun').val(defaultKebun);
-                                loadAfdeling(regional, defaultKebun);
-                            }
+                            if (defaultKebun) $('#filter-kebun').val(defaultKebun);
+                            const selectedKebun = $('#filter-kebun').val();
+                            if (selectedKebun) loadAfdeling(regional, selectedKebun);
                         })
                         .catch(error => {
                             console.error('Error loading kebun:', error);
                             $('#filter-kebun').html('<option value="">All Kebun</option>');
-                            $('#filter-afdeling').html('<option value="">All Afdeling</option>');
                         });
                 }
 
@@ -90,6 +93,7 @@
                 function loadAfdeling(regional, kebun) {
                     if (!regional || !kebun) {
                         $('#filter-afdeling').html('<option value="">All Afdeling</option>');
+                        $('#filter-tahun-tanam').html('<option value="">All Tahun Tanam</option>');
                         return;
                     }
                     fetch(`/api/afdeling-code/${encodeURIComponent(regional)}/${encodeURIComponent(kebun)}`)
@@ -100,10 +104,34 @@
                                 afdelingOptions += `<option value="${afdeling}">${afdeling}</option>`;
                             });
                             $('#filter-afdeling').html(afdelingOptions);
+                            const selectedAfdeling = $('#filter-afdeling').val();
+                            if (selectedAfdeling) loadTahunTanam(regional, kebun, selectedAfdeling);
                         })
                         .catch(error => {
                             console.error('Error loading afdeling:', error);
                             $('#filter-afdeling').html('<option value="">All Afdeling</option>');
+                        });
+                }
+
+                // Load Tahun Tanam options based on Regional, Kebun, and Afdeling
+                function loadTahunTanam(regional, kebun, afdeling) {
+                    if (!regional || !kebun || !afdeling) {
+                        $('#filter-tahun-tanam').html('<option value="">All Tahun Tanam</option>');
+                        return;
+                    }
+                    fetch(
+                            `/api/tahun-tanam-code/${encodeURIComponent(regional)}/${encodeURIComponent(kebun)}/${encodeURIComponent(afdeling)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            let tahunTanamOptions = '<option value="">All Tahun Tanam</option>';
+                            data.forEach(tahun => {
+                                tahunTanamOptions += `<option value="${tahun}">${tahun}</option>`;
+                            });
+                            $('#filter-tahun-tanam').html(tahunTanamOptions);
+                        })
+                        .catch(error => {
+                            console.error('Error loading tahun tanam:', error);
+                            $('#filter-tahun-tanam').html('<option value="">All Tahun Tanam</option>');
                         });
                 }
 
@@ -121,7 +149,10 @@
                             d.afdeling = $('#filter-afdeling').val();
                             d.tahun_tanam = $('#filter-tahun-tanam').val();
                         },
-                        cache: true
+                        cache: true,
+                        error: function(xhr, error, thrown) {
+                            console.log('AJAX error:', xhr.responseText, error, thrown);
+                        }
                     },
                     columns: [{
                             data: 'regional',
@@ -203,16 +234,24 @@
                     }
                 });
 
-                // Load initial data
-                const initialRegional = '{{ $default_regional ?? '' }}';
+                // Initial setup
+                const initialRegional = $('#filter-regional').val() || '{{ $default_regional ?? '' }}';
+                const initialKebun = '{{ $default_kebun ?? '' }}';
                 if (initialRegional) {
                     loadKebun(initialRegional);
+                    if (initialKebun) {
+                        $('#filter-kebun').val(initialKebun);
+                        loadAfdeling(initialRegional, initialKebun);
+                        table.ajax.reload();
+                    }
                 }
 
-                // Event listeners for filter changes
+                // Event listeners for dynamic dropdowns
                 $('#filter-regional').on('change', function() {
                     const regional = this.value;
                     loadKebun(regional);
+                    $('#filter-afdeling').html('<option value="">All Afdeling</option>');
+                    $('#filter-tahun-tanam').html('<option value="">All Tahun Tanam</option>');
                     table.ajax.reload();
                 });
 
@@ -220,11 +259,23 @@
                     const regional = $('#filter-regional').val();
                     const kebun = this.value;
                     loadAfdeling(regional, kebun);
+                    $('#filter-tahun-tanam').html('<option value="">All Tahun Tanam</option>');
                     table.ajax.reload();
                 });
 
-                $('#filter-afdeling, #filter-tahun-tanam').on('change', function() {
+                $('#filter-afdeling').on('change', function() {
+                    const regional = $('#filter-regional').val();
+                    const kebun = $('#filter-kebun').val();
+                    const afdeling = this.value;
+                    loadTahunTanam(regional, kebun, afdeling);
                     table.ajax.reload();
+                });
+
+                // Debounce filter changes
+                let debounceTimer;
+                $('#filter-tahun-tanam').on('change', function() {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => table.ajax.reload(), 300);
                 });
             });
         </script>

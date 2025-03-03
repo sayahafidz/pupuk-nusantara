@@ -13,15 +13,20 @@ class RencanaRealisasiPemupukanAfdController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
+        $headerAction = '<a href="#" class="btn btn-sm btn-primary" role="button">Add Rencana Realisasi</a>';
 
-        // Fetch distinct regionals and kebuns
-        $regionals = RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional');
-        $kebuns = RencanaRealisasiPemupukan::select('kebun')->distinct()->pluck('kebun');
+        // Fetch distinct regionals and kebuns (cached for performance)
+        $regionals = \Cache::remember('rencana_realisasi_regionals', 60 * 60 * 24, fn() =>
+            RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional')
+        );
+        $kebuns = \Cache::remember('rencana_realisasi_kebuns', 60 * 60 * 24, fn() =>
+            RencanaRealisasiPemupukan::select('kebun')->distinct()->pluck('kebun')
+        );
 
         // Define defaults outside AJAX block
         if ($auth_user->regional !== 'head_office') {
@@ -32,28 +37,18 @@ class RencanaRealisasiPemupukanAfdController extends Controller
             $default_kebun = $request->input('kebun');
         }
 
-        if (request()->ajax()) {
+        if ($request->ajax()) {
             $query = RencanaRealisasiPemupukan::query();
 
-            // Apply regional filter if provided
-            if ($regional = request()->input('regional')) {
-                $query->where('regional', $regional);
-            }
-
-            // Apply user auth regional filter if not head_office
+            // Apply role-based filtering
             if ($auth_user->regional !== 'head_office') {
-                $query->where('regional', $auth_user->regional);
+                $query->where('regional', $default_regional)
+                    ->where('kebun', $default_kebun);
             }
 
-            // Apply kebun filter if provided
-            if ($kebun = request()->input('kebun')) {
-                $query->where('kebun', $kebun);
-            }
-
-            // Apply user auth regional filter if not head_office
-            if ($auth_user->regional !== 'head_office') {
-                $query->where('kebun', $auth_user->kode_kebun);
-            }
+            // Apply filters from DataTables request
+            $request->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
+            $request->whenFilled('kebun', fn($kebun) => $query->where('kebun', $kebun));
 
             $model = $query->select([
                 'regional',
@@ -68,39 +63,26 @@ class RencanaRealisasiPemupukanAfdController extends Controller
             ])->groupBy('regional', 'kebun', 'afdeling');
 
             return DataTables::eloquent($model)
-                ->addColumn('rencana_semester_1', function ($row) {
-                    return number_format($row->rencana_semester_1, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('realisasi_semester_1', function ($row) {
-                    return number_format($row->realisasi_semester_1, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('percentage_semester_1', function ($row) {
-                    return $row->rencana_semester_1 > 0
+                ->addColumn('rencana_semester_1', fn($row) => number_format($row->rencana_semester_1, 0, ',', '.') . ' Kg')
+                ->addColumn('realisasi_semester_1', fn($row) => number_format($row->realisasi_semester_1, 0, ',', '.') . ' Kg')
+                ->addColumn('percentage_semester_1', fn($row) => $row->rencana_semester_1 > 0
                     ? number_format(($row->realisasi_semester_1 / $row->rencana_semester_1) * 100, 2, ',', '.') . '%'
-                    : '0%';
-                })
-                ->addColumn('rencana_semester_2', function ($row) {
-                    return number_format($row->rencana_semester_2, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('realisasi_semester_2', function ($row) {
-                    return number_format($row->realisasi_semester_2, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('percentage_semester_2', function ($row) {
-                    return $row->rencana_semester_2 > 0
+                    : '0%')
+                ->addColumn('rencana_semester_2', fn($row) => number_format($row->rencana_semester_2, 0, ',', '.') . ' Kg')
+                ->addColumn('realisasi_semester_2', fn($row) => number_format($row->realisasi_semester_2, 0, ',', '.') . ' Kg')
+                ->addColumn('percentage_semester_2', fn($row) => $row->rencana_semester_2 > 0
                     ? number_format(($row->realisasi_semester_2 / $row->rencana_semester_2) * 100, 2, ',', '.') . '%'
-                    : '0%';
-                })
-                ->addColumn('rencana_total', function ($row) {
-                    return number_format($row->rencana_total, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('realisasi_total', function ($row) {
-                    return number_format($row->realisasi_total, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('percentage_total', function ($row) {
-                    return $row->rencana_total > 0
+                    : '0%')
+                ->addColumn('rencana_total', fn($row) => number_format($row->rencana_total, 0, ',', '.') . ' Kg')
+                ->addColumn('realisasi_total', fn($row) => number_format($row->realisasi_total, 0, ',', '.') . ' Kg')
+                ->addColumn('percentage_total', fn($row) => $row->rencana_total > 0
                     ? number_format(($row->realisasi_total / $row->rencana_total) * 100, 2, ',', '.') . '%'
-                    : '0%';
-                })
+                    : '0%')
+                ->addColumn('action', fn($row) => '
+                    <a href="#" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="#" class="btn btn-sm btn-danger" onclick="deleteRecord(\'' . $row->regional . '\', \'' . $row->kebun . '\', \'' . $row->afdeling . '\')">Delete</a>
+                ')
+                ->rawColumns(['action'])
                 ->toJson();
         }
 
@@ -108,6 +90,7 @@ class RencanaRealisasiPemupukanAfdController extends Controller
             'pageTitle',
             'auth_user',
             'assets',
+            'headerAction',
             'regionals',
             'kebuns',
             'default_regional',

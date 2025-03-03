@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\AuthHelper;
 use App\Models\RencanaRealisasiPemupukan;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -13,12 +14,13 @@ class RencanaRealisasiPemupukanTTController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
         $default_plant = $auth_user->kebun;
+        $headerAction = '<a href="#" class="btn btn-sm btn-primary" role="button">Add Rencana Realisasi</a>';
 
         // Define defaults outside AJAX block
         if ($auth_user->regional !== 'head_office') {
@@ -29,7 +31,7 @@ class RencanaRealisasiPemupukanTTController extends Controller
             $default_kebun = $request->input('kebun');
         }
 
-        // Cache dropdown values for 24 hours (adjust as needed)
+        // Cache dropdown values for 24 hours
         $regionals = Cache::remember('regionals', 60 * 60 * 24, fn() =>
             RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional')
         );
@@ -39,79 +41,55 @@ class RencanaRealisasiPemupukanTTController extends Controller
         $afdelings = Cache::remember('afdelings', 60 * 60 * 24, fn() =>
             RencanaRealisasiPemupukan::select('afdeling')->distinct()->pluck('afdeling')
         );
-        $tahun_tanams = Cache::remember('tahun_tanams', 60 * 60 * 24, fn() =>
+        $tahunTanams = Cache::remember('tahun_tanams', 60 * 60 * 24, fn() =>
             RencanaRealisasiPemupukan::select('tahun_tanam')->distinct()->pluck('tahun_tanam')
         );
 
-        if (request()->ajax()) {
+        if ($request->ajax()) {
             $query = RencanaRealisasiPemupukan::query();
 
-            // Apply regional filter if provided
-            if ($regional = request()->input('regional')) {
-                $query->where('regional', $regional);
-            }
-
-            // Apply user auth regional filter if not head_office
+            // Apply role-based filtering
             if ($auth_user->regional !== 'head_office') {
-                $query->where('regional', $auth_user->regional);
+                $query->where('regional', $default_regional)
+                    ->where('kebun', $default_kebun);
             }
 
-            // Apply regional filter if provided
-            if ($kebun = request()->input('kebun')) {
-                $query->where('kebun', $kebun);
-            }
+            // Apply filters from DataTables request
+            $request->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
+            $request->whenFilled('kebun', fn($kebun) => $query->where('kebun', $kebun));
+            $request->whenFilled('afdeling', fn($afdeling) => $query->where('afdeling', $afdeling));
+            $request->whenFilled('tahun_tanam', fn($tahun_tanam) => $query->where('tahun_tanam', $tahun_tanam));
 
-            // Apply user auth kebun filter if not head_office
-            if ($auth_user->regional !== 'head_office') {
-                $query->where('kebun', $auth_user->kode_kebun);
-            }
+            $model = $query->select([
+                'regional',
+                'kebun',
+                'afdeling',
+                'tahun_tanam',
+                DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
+                DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
+                DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
+                DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
+                DB::raw("SUM(rencana_total) as rencana_total"),
+                DB::raw("SUM(realisasi_total) as realisasi_total"),
+            ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam');
 
-            $model = $query
-                ->select([
-                    'regional',
-                    'kebun',
-                    'afdeling',
-                    'tahun_tanam',
-                    DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
-                    DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
-                    DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
-                    DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
-                    DB::raw("SUM(rencana_total) as rencana_total"),
-                    DB::raw("SUM(realisasi_total) as realisasi_total"),
-                ]);
-
-            // Apply filters only if provided (lazy evaluation)
-            request()->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
-            request()->whenFilled('kebun', fn($kebun) => $query->where('kebun', $kebun));
-            request()->whenFilled('afdeling', fn($afdeling) => $query->where('afdeling', $afdeling));
-            request()->whenFilled('tahun_tanam', fn($tahun_tanam) => $query->where('tahun_tanam', $tahun_tanam));
-
-            // Group by with indexed columns
-            $query->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam');
-
-            return DataTables::eloquent($query)
-                ->setRowId('regional_kebun_afdeling_tahun') // Unique row ID for better performance
+            return DataTables::eloquent($model)
+                ->setRowId(fn($row) => $row->regional . '_' . $row->kebun . '_' . $row->afdeling . '_' . $row->tahun_tanam)
                 ->editColumn('rencana_semester_1', fn($row) => number_format($row->rencana_semester_1, 0, ',', '.') . ' Kg')
                 ->editColumn('realisasi_semester_1', fn($row) => number_format($row->realisasi_semester_1, 0, ',', '.') . ' Kg')
-                ->editColumn('percentage_semester_1', fn($row) =>
-                    $row->rencana_semester_1 > 0
+                ->editColumn('percentage_semester_1', fn($row) => $row->rencana_semester_1 > 0
                     ? number_format(($row->realisasi_semester_1 / $row->rencana_semester_1) * 100, 2, ',', '.') . '%'
-                    : '0%'
-                )
+                    : '0%')
                 ->editColumn('rencana_semester_2', fn($row) => number_format($row->rencana_semester_2, 0, ',', '.') . ' Kg')
                 ->editColumn('realisasi_semester_2', fn($row) => number_format($row->realisasi_semester_2, 0, ',', '.') . ' Kg')
-                ->editColumn('percentage_semester_2', fn($row) =>
-                    $row->rencana_semester_2 > 0
+                ->editColumn('percentage_semester_2', fn($row) => $row->rencana_semester_2 > 0
                     ? number_format(($row->realisasi_semester_2 / $row->rencana_semester_2) * 100, 2, ',', '.') . '%'
-                    : '0%'
-                )
+                    : '0%')
                 ->editColumn('rencana_total', fn($row) => number_format($row->rencana_total, 0, ',', '.') . ' Kg')
                 ->editColumn('realisasi_total', fn($row) => number_format($row->realisasi_total, 0, ',', '.') . ' Kg')
-                ->editColumn('percentage_total', fn($row) =>
-                    $row->rencana_total > 0
+                ->editColumn('percentage_total', fn($row) => $row->rencana_total > 0
                     ? number_format(($row->realisasi_total / $row->rencana_total) * 100, 2, ',', '.') . '%'
-                    : '0%'
-                )
+                    : '0%')
                 ->toJson();
         }
 
@@ -119,10 +97,11 @@ class RencanaRealisasiPemupukanTTController extends Controller
             'pageTitle',
             'auth_user',
             'assets',
+            'headerAction',
             'regionals',
             'kebuns',
             'afdelings',
-            'tahun_tanams',
+            'tahunTanams',
             'default_regional',
             'default_kebun',
             'default_plant'
