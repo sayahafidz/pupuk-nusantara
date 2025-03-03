@@ -27,7 +27,7 @@ class RencanaPemupukanController extends Controller
         $headerAction = '<a href="' . route('rencana-pemupukan.create') . '" class="btn btn-sm btn-primary" role="button">Add</a>'
         . ' <a href="' . route('rencana-pemupukan.upload') . '" class="btn btn-sm btn-success" role="button">Upload</a>';
 
-        // Cache dropdown values
+        // Cache dropdown values (these are small datasets, safe to cache)
         $regionals = Cache::remember('rencana_pemupukan_regionals', 60, fn() =>
             RencanaPemupukan::select('regional')->distinct()->pluck('regional')->all()
         );
@@ -43,42 +43,35 @@ class RencanaPemupukanController extends Controller
         $default_plant = $auth_user->regional !== 'head_office' ? $auth_user->kebun : $request->input('plant');
 
         if ($request->ajax()) {
-            // Generate a unique cache key based on the request parameters
-            $cacheKey = 'rencana_pemupukan_data_' . md5(json_encode($request->all()));
+            // Use query builder directly with DataTables for server-side processing
+            $query = RencanaPemupukan::query()
+                ->select([
+                    'id',
+                    'regional',
+                    'plant',
+                    'kebun',
+                    'afdeling',
+                    'blok',
+                    'tahun_tanam',
+                    'jenis_pupuk',
+                    'jumlah_pupuk',
+                    'semester_pemupukan',
+                ]);
 
-            // Retrieve data from cache or query the database
-            $data = Cache::remember($cacheKey, 60, function () use ($request, $auth_user, $default_regional) {
-                $query = RencanaPemupukan::query()
-                    ->select([
-                        'id',
-                        'regional',
-                        'plant',
-                        'kebun',
-                        'afdeling',
-                        'blok',
-                        'tahun_tanam',
-                        'jenis_pupuk',
-                        'jumlah_pupuk',
-                        'semester_pemupukan',
-                    ]);
+            // Role-based filtering
+            if ($auth_user->regional !== 'head_office') {
+                $query->where('regional', $default_regional);
+            }
 
-                // Role-based filtering
-                if ($auth_user->regional !== 'head_office') {
-                    $query->where('regional', $default_regional);
-                }
+            // Apply filters
+            $request->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
+            $request->whenFilled('plant', fn($plant) => $query->where('plant', $plant));
+            $request->whenFilled('afdeling', fn($afdeling) => $query->where('afdeling', $afdeling));
+            $request->whenFilled('tahun_tanam', fn($tahun_tanam) => $query->where('tahun_tanam', $tahun_tanam));
+            $request->whenFilled('jenis_pupuk', fn($jenis_pupuk) => $query->where('jenis_pupuk', $jenis_pupuk));
+            $request->whenFilled('semester_pemupukan', fn($semester) => $query->where('semester_pemupukan', $semester));
 
-                // Apply filters
-                $request->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
-                $request->whenFilled('plant', fn($plant) => $query->where('plant', $plant));
-                $request->whenFilled('afdeling', fn($afdeling) => $query->where('afdeling', $afdeling));
-                $request->whenFilled('tahun_tanam', fn($tahun_tanam) => $query->where('tahun_tanam', $tahun_tanam));
-                $request->whenFilled('jenis_pupuk', fn($jenis_pupuk) => $query->where('jenis_pupuk', $jenis_pupuk));
-                $request->whenFilled('semester_pemupukan', fn($semester) => $query->where('semester_pemupukan', $semester));
-
-                return $query->get();
-            });
-
-            return DataTables::of($data)
+            return DataTables::of($query)
                 ->setRowId('id')
                 ->editColumn('jumlah_pupuk', fn($row) => number_format($row->jumlah_pupuk, 0, ',', '.') . ' Kg')
                 ->addColumn('action', fn($row) => '
