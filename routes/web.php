@@ -117,14 +117,19 @@ Route::group(['middleware' => ['auth', 'cors']], function () {
     // rencana realisasi pemupukan
     Route::get('rencana-realisasi-pemupukan/upload', [RencanaRealisasiPemupukanController::class, 'upload'])->name('rencana-realisasi-pemupukan.upload');
     Route::get('rencana-realisasi-pemupukan/data-table', [RencanaRealisasiPemupukanController::class, 'fetchData'])->name('rencana-realisasi.fetchdata');
+    Route::get('rencana-realisasi-pemupukan/print', [RencanaRealisasiPemupukanController::class, 'print'])->name('rencana-realisasi-pemupukan.print');
     Route::resource('rencana-realisasi-pemupukan', RencanaRealisasiPemupukanController::class);
     // kebun
+    Route::get('rencana-realisasi-pemupukan-kebun/print', [RencanaRealisasiPemupukanKebunController::class, 'print'])->name('ren-rel-pem-keb.print');
     Route::resource('ren-rel-pem-keb', RencanaRealisasiPemupukanKebunController::class);
     // afdeling
+    Route::get('rencana-realisasi-pemupukan-afdeling/print', [RencanaRealisasiPemupukanAfdController::class, 'print'])->name('ren-rel-pem-afd.print');
     Route::resource('ren-rel-pem-afd', RencanaRealisasiPemupukanAfdController::class);
-    // afdeling
+    // tahun tanam
+    Route::get('rencana-realisasi-pemupukan-tt/print', [RencanaRealisasiPemupukanTTController::class, 'print'])->name('ren-rel-pem-tt.print');
     Route::resource('ren-rel-pem-tt', RencanaRealisasiPemupukanTTController::class);
-    // afdeling
+    // jenis pupuk
+    Route::get('rencana-realisasi-pemupukan-jp/print', [RencanaRealisasiPemupukanJPController::class, 'print'])->name('ren-rel-pem-jp.print');
     Route::resource('ren-rel-pem-jp', RencanaRealisasiPemupukanJPController::class);
     // jenis pupuk
     Route::resource('jenis-pupuk', JenisPupukController::class);

@@ -160,7 +160,21 @@
                         }
                     ],
                     dom: 'lBfrtip',
-                    buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
+                    buttons: ['copy', 'csv', 'excel', 'pdf', 'pdf',
+                        {
+                            text: 'Print',
+                            action: function(e, dt, node, config) {
+                                let regional = $('#filter-regional').val();
+                                let kebun = $('#filter-kebun').val();
+                                let url = "{{ route('ren-rel-pem-afd.print') }}";
+                                let params = [];
+                                if (regional) params.push('regional=' + encodeURIComponent(regional));
+                                if (kebun) params.push('kebun=' + encodeURIComponent(kebun));
+                                if (params.length) url += '?' + params.join('&');
+                                window.location.href = url;
+                            }
+                        }
+                    ],
                     order: [
                         [0, 'asc']
                     ],

@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Helpers\AuthHelper;
 use App\Models\RencanaRealisasiPemupukan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
-use Illuminate\Support\Facades\Cache;
 
 class RencanaRealisasiPemupukanAfdController extends Controller
 {
@@ -103,6 +103,37 @@ class RencanaRealisasiPemupukanAfdController extends Controller
         ));
     }
 
+    public function print(Request $request)
+    {
+        $auth_user = AuthHelper::authSession();
+        $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
+
+        $query = RencanaRealisasiPemupukan::query();
+
+        // Apply role-based filtering
+        if ($auth_user->regional !== 'head_office') {
+            $query->where('regional', $auth_user->regional)
+                ->where('kebun', $auth_user->kode_kebun);
+        }
+
+        // Apply filters from request
+        $request->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
+        $request->whenFilled('kebun', fn($kebun) => $query->where('kebun', $kebun));
+
+        $data = $query->select([
+            'regional',
+            'kebun',
+            'afdeling',
+            DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
+            DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
+            DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
+            DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
+            DB::raw("SUM(rencana_total) as rencana_total"),
+            DB::raw("SUM(realisasi_total) as realisasi_total"),
+        ])->groupBy('regional', 'kebun', 'afdeling')->get();
+
+        return view('rencana-realisasi-pemupukan.print-rencana-realisasi-afdeling', compact('pageTitle', 'data'));
+    }
     /**
      * Show the form for creating a new resource.
      */

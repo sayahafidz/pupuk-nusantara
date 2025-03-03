@@ -103,9 +103,13 @@
                             title: 'Rencana Realisasi Pemupukan Data'
                         },
                         {
-                            extend: 'print',
                             text: 'Print',
-                            title: 'Rencana Realisasi Pemupukan Data'
+                            action: function(e, dt, node, config) {
+                                window.location.href =
+                                    "{{ route('rencana-realisasi-pemupukan.print') }}";
+                                window.open(url, '_blank'); // Open in a new tab
+
+                            }
                         }
                     ],
                     language: {

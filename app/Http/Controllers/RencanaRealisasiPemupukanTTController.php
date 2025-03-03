@@ -120,6 +120,48 @@ class RencanaRealisasiPemupukanTTController extends Controller
         ));
     }
 
+    public function print(Request $request)
+    {
+        $auth_user = AuthHelper::authSession();
+        $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
+
+        $filters = [
+            'regional' => $request->input('regional', $auth_user->regional !== 'head_office' ? $auth_user->regional : null),
+            'kebun' => $request->input('kebun', $auth_user->regional !== 'head_office' ? $auth_user->kode_kebun : null),
+            'afdeling' => $request->input('afdeling'),
+            'tahun_tanam' => $request->input('tahun_tanam'),
+        ];
+
+        $query = RencanaRealisasiPemupukan::query();
+
+        if ($filters['regional']) {
+            $query->where('regional', $filters['regional']);
+        }
+        if ($filters['kebun']) {
+            $query->where('kebun', $filters['kebun']);
+        }
+        if ($filters['afdeling']) {
+            $query->where('afdeling', $filters['afdeling']);
+        }
+        if ($filters['tahun_tanam']) {
+            $query->where('tahun_tanam', $filters['tahun_tanam']);
+        }
+
+        $data = $query->select([
+            'regional',
+            'kebun',
+            'afdeling',
+            'tahun_tanam',
+            DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
+            DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
+            DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
+            DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
+            DB::raw("SUM(rencana_total) as rencana_total"),
+            DB::raw("SUM(realisasi_total) as realisasi_total"),
+        ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam')->get();
+
+        return view('rencana-realisasi-pemupukan.print-rencana-realisasi-tt', compact('pageTitle', 'data'));
+    }
     /**
      * Show the form for creating a new resource.
      */

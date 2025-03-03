@@ -134,9 +134,13 @@
                             title: 'Rencana Realisasi Pemupukan Data'
                         },
                         {
-                            extend: 'print',
                             text: 'Print',
-                            title: 'Rencana Realisasi Pemupukan Data'
+                            action: function(e, dt, node, config) {
+                                let regional = $('#filter-regional').val();
+                                let url = "{{ route('ren-rel-pem-keb.print') }}" + (regional ?
+                                    '?regional=' + encodeURIComponent(regional) : '');
+                                window.location.href = url;
+                            }
                         }
                     ],
                     language: {

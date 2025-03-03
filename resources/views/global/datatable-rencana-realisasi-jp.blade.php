@@ -129,7 +129,8 @@
                         return;
                     }
                     fetch(
-                            `/api/tahun-tanam-code/${encodeURIComponent(regional)}/${encodeURIComponent(kebun)}/${encodeURIComponent(afdeling)}`)
+                            `/api/tahun-tanam-code/${encodeURIComponent(regional)}/${encodeURIComponent(kebun)}/${encodeURIComponent(afdeling)}`
+                            )
                         .then(response => response.json())
                         .then(data => {
                             let tahunTanamOptions = '<option value="">All Tahun Tanam</option>';
@@ -236,7 +237,27 @@
                         }
                     ],
                     dom: 'lBfrtip',
-                    buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
+                    buttons: ['copy', 'csv', 'excel', 'pdf', {
+                        text: 'Print',
+                        action: function(e, dt, node, config) {
+                            let regional = $('#filter-regional').val();
+                            let kebun = $('#filter-kebun').val();
+                            let afdeling = $('#filter-afdeling').val();
+                            let tahunTanam = $('#filter-tahun-tanam').val();
+                            let jenisPupuk = $('#filter-jenis-pupuk').val();
+                            let url = "{{ route('ren-rel-pem-jp.print') }}";
+                            let params = [];
+                            if (regional) params.push('regional=' + encodeURIComponent(regional));
+                            if (kebun) params.push('kebun=' + encodeURIComponent(kebun));
+                            if (afdeling) params.push('afdeling=' + encodeURIComponent(afdeling));
+                            if (tahunTanam) params.push('tahun_tanam=' + encodeURIComponent(
+                                tahunTanam));
+                            if (jenisPupuk) params.push('jenis_pupuk=' + encodeURIComponent(
+                                jenisPupuk));
+                            if (params.length) url += '?' + params.join('&');
+                            window.location.href = url;
+                        }
+                    }],
                     order: [
                         [0, 'asc']
                     ],

@@ -72,6 +72,30 @@ class RencanaRealisasiPemupukanController extends Controller
         return view('global.datatable-rencana-realisasi', compact('pageTitle', 'auth_user', 'assets'));
     }
 
+    public function print(Request $request)
+    {
+        $auth_user = AuthHelper::authSession();
+        $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
+
+        // Fetch data without caching for print view (or use cache if preferred)
+        $query = RencanaRealisasiPemupukan::query();
+        if ($auth_user->regional !== 'head_office') {
+            $query->where('regional', $auth_user->regional);
+        }
+
+        $data = $query->select([
+            'regional',
+            DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
+            DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
+            DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
+            DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
+            DB::raw("SUM(rencana_total) as rencana_total"),
+            DB::raw("SUM(realisasi_total) as realisasi_total"),
+        ])->groupBy('regional')->get();
+
+        return view('rencana-realisasi-pemupukan.print-rencana-realisasi', compact('pageTitle', 'data'));
+    }
+
     /**
      * Show the form for creating a new resource.
      */
