@@ -32,7 +32,7 @@ class RencanaRealisasiPemupukanAfdController extends Controller
         // Define defaults outside AJAX block
         if ($auth_user->regional !== 'head_office') {
             $default_regional = $auth_user->regional;
-            $default_kebun = $auth_user->kode_kebun;
+            $default_kebun = $auth_user->kebun;
         } else {
             $default_regional = $request->input('regional');
             $default_kebun = $request->input('kebun');

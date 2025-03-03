@@ -41,7 +41,7 @@ class RencanaRealisasiPemupukanJPController extends Controller
         // Define defaults
         if ($auth_user->regional !== 'head_office') {
             $default_regional = $auth_user->regional;
-            $default_kebun = $auth_user->kode_kebun;
+            $default_kebun = $auth_user->kebun;
         } else {
             $default_regional = $request->input('regional');
             $default_kebun = $request->input('kebun');
@@ -128,51 +128,51 @@ class RencanaRealisasiPemupukanJPController extends Controller
     }
 
     public function print(Request $request)
-{
-    $auth_user = AuthHelper::authSession();
-    $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
+    {
+        $auth_user = AuthHelper::authSession();
+        $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
 
-    $query = RencanaRealisasiPemupukan::query();
+        $query = RencanaRealisasiPemupukan::query();
 
-    // Apply role-based filtering
-    if ($auth_user->regional !== 'head_office') {
-        $query->where('regional', $auth_user->regional)
-            ->where('kebun', $auth_user->kode_kebun);
-    }
+        // Apply role-based filtering
+        if ($auth_user->regional !== 'head_office') {
+            $query->where('regional', $auth_user->regional)
+                ->where('kebun', $auth_user->kode_kebun);
+        }
 
-    // Apply filters dynamically
-    if ($request->filled('regional')) {
-        $query->where('regional', $request->input('regional'));
-    }
-    if ($request->filled('kebun')) {
-        $query->where('kebun', $request->input('kebun'));
-    }
-    if ($request->filled('afdeling')) {
-        $query->where('afdeling', $request->input('afdeling'));
-    }
-    if ($request->filled('tahun_tanam')) {
-        $query->where('tahun_tanam', $request->input('tahun_tanam'));
-    }
-    if ($request->filled('jenis_pupuk')) {
-        $query->where('jenis_pupuk', $request->input('jenis_pupuk'));
-    }
+        // Apply filters dynamically
+        if ($request->filled('regional')) {
+            $query->where('regional', $request->input('regional'));
+        }
+        if ($request->filled('kebun')) {
+            $query->where('kebun', $request->input('kebun'));
+        }
+        if ($request->filled('afdeling')) {
+            $query->where('afdeling', $request->input('afdeling'));
+        }
+        if ($request->filled('tahun_tanam')) {
+            $query->where('tahun_tanam', $request->input('tahun_tanam'));
+        }
+        if ($request->filled('jenis_pupuk')) {
+            $query->where('jenis_pupuk', $request->input('jenis_pupuk'));
+        }
 
-    $data = $query->select([
-        'regional',
-        'kebun',
-        'afdeling',
-        'tahun_tanam',
-        'jenis_pupuk',
-        DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
-        DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
-        DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
-        DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
-        DB::raw("SUM(rencana_total) as rencana_total"),
-        DB::raw("SUM(realisasi_total) as realisasi_total"),
-    ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam', 'jenis_pupuk')->get();
+        $data = $query->select([
+            'regional',
+            'kebun',
+            'afdeling',
+            'tahun_tanam',
+            'jenis_pupuk',
+            DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
+            DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
+            DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
+            DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
+            DB::raw("SUM(rencana_total) as rencana_total"),
+            DB::raw("SUM(realisasi_total) as realisasi_total"),
+        ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam', 'jenis_pupuk')->get();
 
-    return view('rencana-realisasi-pemupukan.print-rencana-realisasi-jp', compact('pageTitle', 'data'));
-}
+        return view('rencana-realisasi-pemupukan.print-rencana-realisasi-jp', compact('pageTitle', 'data'));
+    }
 
     /**
      * Show the form for creating a new resource.
