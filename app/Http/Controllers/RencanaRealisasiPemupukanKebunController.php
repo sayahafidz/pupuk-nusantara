@@ -17,12 +17,14 @@ class RencanaRealisasiPemupukanKebunController extends Controller
     {
         $pageTitle = trans('global-message.list_form_title', ['form' => trans('Rencana Realisasi Pemupukan Data')]);
         $auth_user = AuthHelper::authSession();
-        $assets = [
-            'data-table', // DataTables asset
-        ];
-        $regionals = RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional');
+        $assets = ['data-table'];
 
-        // Define defaults outside AJAX block
+        // Cache regionals for 24 hours
+        $regionals = \Cache::remember('rencana_realisasi_regionals', 60 * 60 * 24, function () {
+            return RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional');
+        });
+
+        // Define defaults
         if ($auth_user->regional !== 'head_office') {
             $default_regional = $auth_user->regional;
             $default_kebun = $auth_user->kebun;
@@ -31,64 +33,50 @@ class RencanaRealisasiPemupukanKebunController extends Controller
             $default_kebun = $request->input('kebun');
         }
 
-        if (request()->ajax()) {
-            $query = RencanaRealisasiPemupukan::query();
+        if ($request->ajax()) {
+            $cacheKey = "rencana_realisasi_{$default_regional}_{$default_kebun}";
 
-            // Apply regional filter if provided
-            if ($regional = request()->input('regional')) {
-                $query->where('regional', $regional);
-            }
+            $data = \Cache::remember($cacheKey, 60 * 60, function () use ($auth_user, $request) {
+                $query = RencanaRealisasiPemupukan::query();
 
-            // Apply user auth regional filter if not head_office
-            if ($auth_user->regional !== 'head_office') {
-                $query->where('regional', $auth_user->regional);
-            }
+                // Apply regional filter
+                if ($regional = $request->input('regional')) {
+                    $query->where('regional', $regional);
+                }
 
-            $model = $query->select([
-                'regional',
-                'kebun',
-                DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
-                DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
-                DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
-                DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
-                DB::raw("SUM(rencana_total) as rencana_total"),
-                DB::raw("SUM(realisasi_total) as realisasi_total"),
-            ])->groupBy('regional', 'kebun');
+                // Restrict by user role if not head_office
+                if ($auth_user->regional !== 'head_office') {
+                    $query->where('regional', $auth_user->regional);
+                }
 
-            return DataTables::eloquent($model)
-                ->addColumn('rencana_semester_1', function ($row) {
-                    return number_format($row->rencana_semester_1, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('realisasi_semester_1', function ($row) {
-                    return number_format($row->realisasi_semester_1, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('percentage_semester_1', function ($row) {
-                    return $row->rencana_semester_1 > 0
+                return $query->select([
+                    'regional',
+                    'kebun',
+                    DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
+                    DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
+                    DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
+                    DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
+                    DB::raw("SUM(rencana_total) as rencana_total"),
+                    DB::raw("SUM(realisasi_total) as realisasi_total"),
+                ])->groupBy('regional', 'kebun')->get();
+            });
+
+            return DataTables::of($data)
+                ->addColumn('rencana_semester_1', fn($row) => number_format($row->rencana_semester_1, 0, ',', '.') . ' Kg')
+                ->addColumn('realisasi_semester_1', fn($row) => number_format($row->realisasi_semester_1, 0, ',', '.') . ' Kg')
+                ->addColumn('percentage_semester_1', fn($row) => $row->rencana_semester_1 > 0
                     ? number_format(($row->realisasi_semester_1 / $row->rencana_semester_1) * 100, 2, ',', '.') . '%'
-                    : '0%';
-                })
-                ->addColumn('rencana_semester_2', function ($row) {
-                    return number_format($row->rencana_semester_2, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('realisasi_semester_2', function ($row) {
-                    return number_format($row->realisasi_semester_2, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('percentage_semester_2', function ($row) {
-                    return $row->rencana_semester_2 > 0
+                    : '0%')
+                ->addColumn('rencana_semester_2', fn($row) => number_format($row->rencana_semester_2, 0, ',', '.') . ' Kg')
+                ->addColumn('realisasi_semester_2', fn($row) => number_format($row->realisasi_semester_2, 0, ',', '.') . ' Kg')
+                ->addColumn('percentage_semester_2', fn($row) => $row->rencana_semester_2 > 0
                     ? number_format(($row->realisasi_semester_2 / $row->rencana_semester_2) * 100, 2, ',', '.') . '%'
-                    : '0%';
-                })
-                ->addColumn('rencana_total', function ($row) {
-                    return number_format($row->rencana_total, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('realisasi_total', function ($row) {
-                    return number_format($row->realisasi_total, 0, ',', '.') . ' Kg';
-                })
-                ->addColumn('percentage_total', function ($row) {
-                    return $row->rencana_total > 0
+                    : '0%')
+                ->addColumn('rencana_total', fn($row) => number_format($row->rencana_total, 0, ',', '.') . ' Kg')
+                ->addColumn('realisasi_total', fn($row) => number_format($row->realisasi_total, 0, ',', '.') . ' Kg')
+                ->addColumn('percentage_total', fn($row) => $row->rencana_total > 0
                     ? number_format(($row->realisasi_total / $row->rencana_total) * 100, 2, ',', '.') . '%'
-                    : '0%';
-                })
+                    : '0%')
                 ->toJson();
         }
 
@@ -97,8 +85,7 @@ class RencanaRealisasiPemupukanKebunController extends Controller
             'auth_user',
             'assets',
             'regionals',
-            'default_regional',
-
+            'default_regional'
         ));
     }
 

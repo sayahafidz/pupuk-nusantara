@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AuthHelper;
 use App\Models\RencanaRealisasiPemupukan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Yajra\DataTables\Facades\DataTables;
@@ -21,23 +22,29 @@ class RencanaRealisasiPemupukanController extends Controller
         $assets = ['data-table'];
 
         if (request()->ajax()) {
-            $query = RencanaRealisasiPemupukan::query();
+            // Generate a cache key based on user regional access
+            $cacheKey = 'rencana_realisasi_' . ($auth_user->regional ?? 'all');
 
-            if ($auth_user->regional !== 'head_office') {
-                $query->where('regional', $auth_user->regional);
-            }
+            // Cache data for 5 minutes
+            $data = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($auth_user) {
+                $query = RencanaRealisasiPemupukan::query();
 
-            $model = $query->select([
-                'regional',
-                DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
-                DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
-                DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
-                DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
-                DB::raw("SUM(rencana_total) as rencana_total"),
-                DB::raw("SUM(realisasi_total) as realisasi_total"),
-            ])->groupBy('regional');
+                if ($auth_user->regional !== 'head_office') {
+                    $query->where('regional', $auth_user->regional);
+                }
 
-            return DataTables::eloquent($model)
+                return $query->select([
+                    'regional',
+                    DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
+                    DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
+                    DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
+                    DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
+                    DB::raw("SUM(rencana_total) as rencana_total"),
+                    DB::raw("SUM(realisasi_total) as realisasi_total"),
+                ])->groupBy('regional')->get();
+            });
+
+            return DataTables::of($data)
                 ->editColumn('rencana_semester_1', fn($row) => number_format($row->rencana_semester_1, 0, ',', '.') . ' Kg')
                 ->editColumn('realisasi_semester_1', fn($row) => number_format($row->realisasi_semester_1, 0, ',', '.') . ' Kg')
                 ->addColumn('percentage_semester_1', fn($row) =>

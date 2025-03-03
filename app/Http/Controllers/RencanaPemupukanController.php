@@ -28,13 +28,13 @@ class RencanaPemupukanController extends Controller
         . ' <a href="' . route('rencana-pemupukan.upload') . '" class="btn btn-sm btn-success" role="button">Upload</a>';
 
         // Cache dropdown values
-        $regionals = Cache::remember('rencana_pemupukan_regionals', 60 * 60 * 24, fn() =>
+        $regionals = Cache::remember('rencana_pemupukan_regionals', 60, fn() =>
             RencanaPemupukan::select('regional')->distinct()->pluck('regional')->all()
         );
-        $jenisPupuks = Cache::remember('rencana_pemupukan_jenis_pupuks', 60 * 60 * 24, fn() =>
+        $jenisPupuks = Cache::remember('rencana_pemupukan_jenis_pupuks', 60, fn() =>
             RencanaPemupukan::select('jenis_pupuk')->distinct()->pluck('jenis_pupuk')->all()
         );
-        $semesterPemupukans = Cache::remember('rencana_pemupukan_semester_pemupukan', 60 * 60 * 24, fn() =>
+        $semesterPemupukans = Cache::remember('rencana_pemupukan_semester_pemupukan', 60, fn() =>
             RencanaPemupukan::select('semester_pemupukan')->distinct()->pluck('semester_pemupukan')->all()
         );
 
@@ -43,40 +43,48 @@ class RencanaPemupukanController extends Controller
         $default_plant = $auth_user->regional !== 'head_office' ? $auth_user->kebun : $request->input('plant');
 
         if ($request->ajax()) {
-            $query = RencanaPemupukan::query()
-                ->select([
-                    'id',
-                    'regional',
-                    'plant',
-                    'kebun',
-                    'afdeling',
-                    'blok',
-                    'tahun_tanam',
-                    'jenis_pupuk',
-                    'jumlah_pupuk',
-                    'semester_pemupukan',
-                ]);
+            // Generate a unique cache key based on the request parameters
+            $cacheKey = 'rencana_pemupukan_data_' . md5(json_encode($request->all()));
 
-            // Role-based filtering
-            if ($auth_user->regional !== 'head_office') {
-                $query->where('regional', $default_regional);
-            }
+            // Retrieve data from cache or query the database
+            $data = Cache::remember($cacheKey, 60, function () use ($request, $auth_user, $default_regional) {
+                $query = RencanaPemupukan::query()
+                    ->select([
+                        'id',
+                        'regional',
+                        'plant',
+                        'kebun',
+                        'afdeling',
+                        'blok',
+                        'tahun_tanam',
+                        'jenis_pupuk',
+                        'jumlah_pupuk',
+                        'semester_pemupukan',
+                    ]);
 
-            // Apply filters
-            $request->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
-            $request->whenFilled('plant', fn($plant) => $query->where('plant', $plant));
-            $request->whenFilled('afdeling', fn($afdeling) => $query->where('afdeling', $afdeling));
-            $request->whenFilled('tahun_tanam', fn($tahun_tanam) => $query->where('tahun_tanam', $tahun_tanam));
-            $request->whenFilled('jenis_pupuk', fn($jenis_pupuk) => $query->where('jenis_pupuk', $jenis_pupuk));
-            $request->whenFilled('semester_pemupukan', fn($semester) => $query->where('semester_pemupukan', $semester));
+                // Role-based filtering
+                if ($auth_user->regional !== 'head_office') {
+                    $query->where('regional', $default_regional);
+                }
 
-            return DataTables::of($query)
+                // Apply filters
+                $request->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
+                $request->whenFilled('plant', fn($plant) => $query->where('plant', $plant));
+                $request->whenFilled('afdeling', fn($afdeling) => $query->where('afdeling', $afdeling));
+                $request->whenFilled('tahun_tanam', fn($tahun_tanam) => $query->where('tahun_tanam', $tahun_tanam));
+                $request->whenFilled('jenis_pupuk', fn($jenis_pupuk) => $query->where('jenis_pupuk', $jenis_pupuk));
+                $request->whenFilled('semester_pemupukan', fn($semester) => $query->where('semester_pemupukan', $semester));
+
+                return $query->get();
+            });
+
+            return DataTables::of($data)
                 ->setRowId('id')
                 ->editColumn('jumlah_pupuk', fn($row) => number_format($row->jumlah_pupuk, 0, ',', '.') . ' Kg')
                 ->addColumn('action', fn($row) => '
-                    <a href="' . route('rencana-pemupukan.edit', $row->id) . '" class="btn btn-sm btn-primary">Edit</a>
-                    <a href="#" class="btn btn-sm btn-danger" onclick="deleteRencanaPemupukan(' . $row->id . ')">Delete</a>
-                ')
+                <a href="' . route('rencana-pemupukan.edit', $row->id) . '" class="btn btn-sm btn-primary">Edit</a>
+                <a href="#" class="btn btn-sm btn-danger" onclick="deleteRencanaPemupukan(' . $row->id . ')">Delete</a>
+            ')
                 ->rawColumns(['action'])
                 ->toJson();
         }

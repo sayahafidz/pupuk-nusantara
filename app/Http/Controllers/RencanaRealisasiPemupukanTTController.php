@@ -32,48 +32,60 @@ class RencanaRealisasiPemupukanTTController extends Controller
         }
 
         // Cache dropdown values for 24 hours
-        $regionals = Cache::remember('regionals', 60 * 60 * 24, fn() =>
+        $regionals = Cache::remember('regionals', 60, fn() =>
             RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional')
         );
-        $kebuns = Cache::remember('kebuns', 60 * 60 * 24, fn() =>
+        $kebuns = Cache::remember('kebuns', 60, fn() =>
             RencanaRealisasiPemupukan::select('kebun')->distinct()->pluck('kebun')
         );
-        $afdelings = Cache::remember('afdelings', 60 * 60 * 24, fn() =>
+        $afdelings = Cache::remember('afdelings', 60, fn() =>
             RencanaRealisasiPemupukan::select('afdeling')->distinct()->pluck('afdeling')
         );
-        $tahunTanams = Cache::remember('tahun_tanams', 60 * 60 * 24, fn() =>
+        $tahunTanams = Cache::remember('tahun_tanams', 60, fn() =>
             RencanaRealisasiPemupukan::select('tahun_tanam')->distinct()->pluck('tahun_tanam')
         );
 
         if ($request->ajax()) {
-            $query = RencanaRealisasiPemupukan::query();
+            $filters = [
+                'regional' => $request->input('regional', $default_regional),
+                'kebun' => $request->input('kebun', $default_kebun),
+                'afdeling' => $request->input('afdeling'),
+                'tahun_tanam' => $request->input('tahun_tanam'),
+            ];
 
-            // Apply role-based filtering
-            if ($auth_user->regional !== 'head_office') {
-                $query->where('regional', $default_regional)
-                    ->where('kebun', $default_kebun);
-            }
+            $cacheKey = 'rencana_realisasi_' . md5(json_encode($filters));
 
-            // Apply filters from DataTables request
-            $request->whenFilled('regional', fn($regional) => $query->where('regional', $regional));
-            $request->whenFilled('kebun', fn($kebun) => $query->where('kebun', $kebun));
-            $request->whenFilled('afdeling', fn($afdeling) => $query->where('afdeling', $afdeling));
-            $request->whenFilled('tahun_tanam', fn($tahun_tanam) => $query->where('tahun_tanam', $tahun_tanam));
+            $cachedData = Cache::remember($cacheKey, 60 * 5, function () use ($filters) {
+                $query = RencanaRealisasiPemupukan::query();
 
-            $model = $query->select([
-                'regional',
-                'kebun',
-                'afdeling',
-                'tahun_tanam',
-                DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
-                DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
-                DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
-                DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
-                DB::raw("SUM(rencana_total) as rencana_total"),
-                DB::raw("SUM(realisasi_total) as realisasi_total"),
-            ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam');
+                if ($filters['regional']) {
+                    $query->where('regional', $filters['regional']);
+                }
+                if ($filters['kebun']) {
+                    $query->where('kebun', $filters['kebun']);
+                }
+                if ($filters['afdeling']) {
+                    $query->where('afdeling', $filters['afdeling']);
+                }
+                if ($filters['tahun_tanam']) {
+                    $query->where('tahun_tanam', $filters['tahun_tanam']);
+                }
 
-            return DataTables::eloquent($model)
+                return $query->select([
+                    'regional',
+                    'kebun',
+                    'afdeling',
+                    'tahun_tanam',
+                    DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
+                    DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
+                    DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
+                    DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
+                    DB::raw("SUM(rencana_total) as rencana_total"),
+                    DB::raw("SUM(realisasi_total) as realisasi_total"),
+                ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam')->get();
+            });
+
+            return DataTables::of($cachedData)
                 ->setRowId(fn($row) => $row->regional . '_' . $row->kebun . '_' . $row->afdeling . '_' . $row->tahun_tanam)
                 ->editColumn('rencana_semester_1', fn($row) => number_format($row->rencana_semester_1, 0, ',', '.') . ' Kg')
                 ->editColumn('realisasi_semester_1', fn($row) => number_format($row->realisasi_semester_1, 0, ',', '.') . ' Kg')
