@@ -88,7 +88,7 @@ Route::group(['middleware' => ['auth', 'cors']], function () {
     Route::get('/pemupukan/create', [PemupukanController::class, 'create'])->name('pemupukan.create');
     Route::get('/pemupukan/edit/{id}', [PemupukanController::class, 'edit'])->name('pemupukan.edit');
     Route::post('/pemupukan/update/{id}', [PemupukanController::class, 'update'])->name('pemupukan.update');
-    Route::delete('/pemupukan/delete/{id}', [PemupukanController::class, 'destroy'])->name('pemupukan.destroy');
+    Route::delete('/pemupukan/{id}', [PemupukanController::class, 'destroy'])->name('pemupukan.destroy');
     Route::get('/pemupukan/show/{id}', [PemupukanController::class, 'show'])->name('pemupukan.show');
     Route::get('upload-data-pemupukan', [PemupukanController::class, 'upload'])->name('pemupukan.upload');
     Route::post('/pemupukan/import', [PemupukanController::class, 'import'])->name('pemupukan.import');

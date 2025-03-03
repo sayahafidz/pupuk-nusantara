@@ -108,7 +108,7 @@
                                     <option selected disabled value="">Pilih Jenis Pupuk...</option>
                                     @foreach ($jenisPupuk as $jp)
                                         <option value="{{ $jp->id }}"
-                                            {{ old('jenis_pupuk', $data->jenis_pupuk ?? '') == $jp->id ? 'selected' : '' }}>
+                                            {{ old('jenis_pupuk', $data->id_pupuk ?? '') == $jp->id ? 'selected' : '' }}>
                                             {{ $jp->nama_pupuk . ' - ' . $jp->jenis_pupuk }}
                                         </option>
                                     @endforeach

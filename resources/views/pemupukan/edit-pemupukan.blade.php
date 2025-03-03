@@ -107,7 +107,7 @@
                                     <option selected disabled value="">Pilih Jenis Pupuk...</option>
                                     @foreach ($jenisPupuk as $jp)
                                         <option value="{{ $jp->id }}"
-                                            {{ isset($data) && $data->jenis_pupuk == $jp->id ? 'selected' : '' }}>
+                                            {{ isset($data) && $data->id_pupuk == $jp->id ? 'selected' : '' }}>
                                             {{ $jp->nama_pupuk . ' - ' . $jp->jenis_pupuk }}
                                         </option>
                                     @endforeach
@@ -119,7 +119,7 @@
                             <div class="col-md-6">
                                 <label for="validationCustom09" class="form-label">Jumlah Pemupukan (KG)</label>
                                 <input type="number" class="form-control" id="validationCustom09" required
-                                    name="jumlah_pemupukan" value="{{ $data->jumlah_pemupukan ?? '' }}"
+                                    name="jumlah_pupuk" value="{{ $data->jumlah_pupuk ?? '' }}"
                                     style="background-color: green; color: white;">
                                 <div class="invalid-feedback">
                                     Please provide a valid jumlah pemupukan.
@@ -267,7 +267,7 @@
             const luasBlokValue = document.querySelector('#validationCustom06').value;
             const jumlahPokokValue = document.querySelector('#validationCustom07').value;
             const jenisPupukValue = document.querySelector('#validationCustomUsername08').value;
-            const jumlahPemupukanValue = document.querySelector('#validationCustom09').value;
+            const jumlahPupukValue = document.querySelector('#validationCustom09').value;
             const luasPemupukanValue = document.querySelector('#validationCustom10').value;
             const tanggalPemupukanValue = document.querySelector('#validationCustom11').value;
             const caraPemupukan = document.querySelector('#validationCustom12').value;
@@ -284,7 +284,7 @@
             console.log('Luas Blok:', luasBlokValue);
             console.log('Jumlah Pokok:', jumlahPokokValue);
             console.log('Jenis Pupuk:', jenisPupukValue);
-            console.log('Jumlah Pemupukan:', jumlahPemupukanValue);
+            console.log('Jumlah Pemupukan:', jumlahPupukValue);
             console.log('Luas Pemupukan:', luasPemupukanValue);
             console.log('Tanggal Pemupukan:', tanggalPemupukanValue);
             console.log('Cara Pemupukan:', caraPemupukan);
@@ -299,7 +299,7 @@
             formData.append('luas_blok', luasBlokValue);
             formData.append('jumlah_pokok', jumlahPokokValue);
             formData.append('jenis_pupuk', jenisPupukValue);
-            formData.append('jumlah_pemupukan', jumlahPemupukanValue);
+            formData.append('jumlah_pupuk', jumlahPupukValue);
             formData.append('luas_pemupukan', luasPemupukanValue);
             formData.append('tanggal_pemupukan', tanggalPemupukanValue);
             formData.append('cara_pemupukan', caraPemupukan);

@@ -53,7 +53,7 @@ class PemupukanController extends Controller
             $default_kebun = $auth_user->kebun;
         } else {
             $default_regional = $request->input('regional');
-            $default_kebun = $request->input('kebun'); 
+            $default_kebun = $request->input('kebun');
         }
 
         if ($request->ajax()) {
@@ -220,7 +220,7 @@ class PemupukanController extends Controller
             'luas_blok' => 'nullable|numeric',
             'jumlah_pokok' => 'nullable|integer',
             'jenis_pupuk' => 'required|integer',
-            'jumlah_pemupukan' => 'required|numeric',
+            'jumlah_pupuk' => 'required|numeric',
             'luas_pemupukan' => 'required|numeric',
             'tanggal_pemupukan' => 'required|date',
             'cara_pemupukan' => 'required|string',
@@ -269,7 +269,7 @@ class PemupukanController extends Controller
             'luas_blok' => $validatedData['luas_blok'] ?? $oldPemupukan->luas_blok,
             'jumlah_pokok' => $validatedData['jumlah_pokok'] ?? $oldPemupukan->jumlah_pokok,
             'jenis_pupuk' => $namaPupuk ?? $oldPemupukan->jenis_pupuk,
-            'jumlah_pemupukan' => $validatedData['jumlah_pemupukan'] ?? $oldPemupukan->jumlah_pemupukan,
+            'jumlah_pupuk' => $validatedData['jumlah_pupuk'] ?? $oldPemupukan->jumlah_pupuk,
             'luas_pemupukan' => $validatedData['luas_pemupukan'] ?? $oldPemupukan->luas_pemupukan,
             'tanggal_pemupukan' => $validatedData['tanggal_pemupukan'] ?? $oldPemupukan->tanggal_pemupukan,
             'cara_pemupukan' => $validatedData['cara_pemupukan'] ?? $oldPemupukan->cara_pemupukan,

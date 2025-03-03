@@ -298,24 +298,52 @@
             });
 
             function deleteRencanaPemupukan(id) {
-                if (confirm('Are you sure you want to delete this record?')) {
-                    fetch('/rencana-pemupukan/' + id, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                $('#dataTable').DataTable().ajax.reload();
-                                alert('Record deleted successfully');
-                            } else {
-                                alert('Failed to delete record');
-                            }
-                        })
-                        .catch(() => alert('An error occurred'));
-                }
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'You will not be able to recover this record!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/rencana-pemupukan/' + id, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.message === "Data has been deleted successfully!") {
+                                    $('#dataTable').DataTable().ajax.reload(); // Reload the DataTable
+                                    Swal.fire({
+                                        title: 'Deleted!',
+                                        text: 'The record has been deleted.',
+                                        icon: 'success',
+                                        confirmButtonText: 'OK'
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: 'Error!',
+                                        text: 'Failed to delete the record.',
+                                        icon: 'error',
+                                        confirmButtonText: 'OK'
+                                    });
+                                }
+                            })
+                            .catch(() => {
+                                Swal.fire({
+                                    title: 'Error!',
+                                    text: 'An error occurred while deleting the record.',
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            });
+                    }
+                });
             }
         </script>
     @endpush
