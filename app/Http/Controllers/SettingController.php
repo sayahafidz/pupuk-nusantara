@@ -8,6 +8,8 @@ use App\Models\Settings;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\AuthHelper;
+
 
 class SettingController extends Controller
 {
@@ -20,10 +22,11 @@ class SettingController extends Controller
     public function index(SettingDataTable $dataTable)
     {
         $pageTitle = trans('global-message.list_form_title', ['form' => trans('Setting')]);
+        $auth_user = AuthHelper::authSession(); // Added to match example convention
         $assets = ['data-table'];
         $headerAction = '<a href="' . route('setting.create') . '" class="btn btn-sm btn-primary" role="button">Add Setting</a>';
 
-        return $dataTable->render('global.datatable', compact('pageTitle', 'assets', 'headerAction'));
+        return $dataTable->render('global.datatable', compact('pageTitle', 'auth_user', 'assets', 'headerAction'));
     }
 
     /**

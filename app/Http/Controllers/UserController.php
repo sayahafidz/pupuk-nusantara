@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
+
 class UserController extends Controller
 {
     /**
@@ -22,6 +23,7 @@ class UserController extends Controller
         $auth_user = AuthHelper::authSession();
         $assets = ['data-table'];
         $headerAction = '<a href="' . route('users.create') . '" class="btn btn-sm btn-primary" role="button">Add User</a>';
+
         return $dataTable->render('global.datatable', compact('pageTitle', 'auth_user', 'assets', 'headerAction'));
     }
 

@@ -23,6 +23,7 @@ class MasterDataController extends Controller
         $assets = ['data-table'];
         $headerAction = '<a href="' . route('master-data.create') . '" class="btn btn-sm btn-primary" role="button">Add Master Data</a>'
         . ' <a href="' . route('upload-data.upload') . '" class="btn btn-sm btn-success" role="button">Upload Master Data File</a>';
+
         return $dataTable->render('global.datatable', compact('pageTitle', 'auth_user', 'assets', 'headerAction'));
     }
 

@@ -3,7 +3,6 @@
 namespace App\DataTables;
 
 use App\Models\MasterData;
-use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Services\DataTable;
 
@@ -20,13 +19,12 @@ class MasterDataTable extends DataTable
         return datatables()
             ->eloquent($query)
             ->addColumn('action', 'master-data.action')
-            ->rawColumns(['action', 'status']);
+            ->rawColumns(['action']); // Removed 'status' since it’s not in columns
     }
 
     /**
      * Get query source of dataTable.
      *
-     * @param \App\Models\User $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function query()
@@ -43,14 +41,25 @@ class MasterDataTable extends DataTable
     public function html()
     {
         return $this->builder()
-            ->setTableId('dataTable')
+            ->setTableId('master-data-datatable') // Unique table ID
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->ajax([
+                'url' => route('master-data.index'), // Route to fetch data
+                'type' => 'GET', // HTTP method
+            ])
             ->dom('<"row align-items-center"<"col-md-2" l><"col-md-6" B><"col-md-4"f>><"table-responsive my-3" rt><"row align-items-center" <"col-md-6" i><"col-md-6" p>><"clear">')
-
             ->parameters([
-                "processing" => true,
-                "autoWidth" => false,
+                'processing' => true,
+                'serverSide' => true,
+                'autoWidth' => false,
+                'buttons' => [
+                    ['extend' => 'excel', 'className' => 'btn btn-success btn-sm', 'text' => 'Export Excel'],
+                    ['extend' => 'pdf', 'className' => 'btn btn-danger btn-sm', 'text' => 'Export PDF'],
+                ],
+                'order' => [[0, 'asc']], // Default ordering
+                'language' => [
+                    'url' => '//cdn.datatables.net/plug-ins/1.10.25/i18n/English.json',
+                ],
             ]);
     }
 
@@ -62,11 +71,11 @@ class MasterDataTable extends DataTable
     protected function getColumns()
     {
         return [
-            ['data' => 'id', 'name' => 'id', 'title' => 'id'],
+            ['data' => 'id', 'name' => 'id', 'title' => 'ID'],
             ['data' => 'kondisi', 'name' => 'kondisi', 'title' => 'Kondisi', 'orderable' => false],
             ['data' => 'status_umur', 'name' => 'status_umur', 'title' => 'Status Umur'],
             ['data' => 'rpc', 'name' => 'rpc', 'title' => 'RPC'],
-            ['data' => 'plant', 'name' => 'plant', 'title' => 'PLANT'],
+            ['data' => 'plant', 'name' => 'plant', 'title' => 'Plant'],
             ['data' => 'kode_kebun', 'name' => 'kode_kebun', 'title' => 'Kode Kebun'],
             ['data' => 'nama_kebun', 'name' => 'nama_kebun', 'title' => 'Nama Kebun'],
             ['data' => 'kkl_kebun', 'name' => 'kkl_kebun', 'title' => 'KKL Kebun'],

@@ -7,6 +7,7 @@ use App\Http\Requests\WhatsappRequest;
 use App\Models\User;
 use App\Models\Whatsapp;
 use Illuminate\Support\Facades\Http;
+use App\Helpers\AuthHelper;
 
 class WhatsAppController extends Controller
 {
@@ -104,11 +105,12 @@ class WhatsAppController extends Controller
     public function index(WhatsappDataTable $dataTable)
     {
         $pageTitle = trans('global-message.list_form_title', ['form' => trans('Whatsapp Setting')]);
+        $auth_user = AuthHelper::authSession(); // Added to match example convention, even if not used directly
+        $assets = ['data-table'];
+        $headerAction = '<a href="' . route('whatsapp.create') . '" class="btn btn-sm btn-primary" role="button">Add Whatsapp Data</a>'
+            . ' <a href="#" class="btn btn-sm btn-success" role="button" onclick="sendWhatsappData()">Send Whatsapp Data</a>';
 
-        $headerAction = '<a href="' . route('whatsapp.create') . '" class="btn btn-sm btn-primary" role="button">Add Whatsapp Data</a>';
-        $headerAction .= ' <a href="#" class="btn btn-sm btn-success" role="button" onclick="sendWhatsappData()">Send Whatsapp Data</a>';
-
-        return $dataTable->render('global.datatable', compact('pageTitle', 'headerAction'));
+        return $dataTable->render('global.datatable', compact('pageTitle', 'auth_user', 'assets', 'headerAction'));
     }
 
     /**

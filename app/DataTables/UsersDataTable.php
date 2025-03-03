@@ -49,7 +49,6 @@ class UsersDataTable extends DataTable
     /**
      * Get query source of dataTable.
      *
-     * @param \App\Models\User $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function query()
@@ -66,13 +65,25 @@ class UsersDataTable extends DataTable
     public function html()
     {
         return $this->builder()
-            ->setTableId('dataTable')
+            ->setTableId('users-datatable') // Unique table ID
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->ajax([
+                'url' => route('users.index'), // Route to fetch data
+                'type' => 'GET', // HTTP method
+            ])
             ->dom('<"row align-items-center"<"col-md-2" l><"col-md-6" B><"col-md-4"f>><"table-responsive my-3" rt><"row align-items-center" <"col-md-6" i><"col-md-6" p>><"clear">')
             ->parameters([
-                "processing" => true,
-                "autoWidth" => false,
+                'processing' => true,
+                'serverSide' => true,
+                'autoWidth' => false,
+                'buttons' => [
+                    ['extend' => 'excel', 'className' => 'btn btn-success btn-sm', 'text' => 'Export Excel'],
+                    ['extend' => 'pdf', 'className' => 'btn btn-danger btn-sm', 'text' => 'Export PDF'],
+                ],
+                'order' => [[0, 'asc']], // Default ordering
+                'language' => [
+                    'url' => '//cdn.datatables.net/plug-ins/1.10.25/i18n/English.json',
+                ],
             ]);
     }
 
@@ -85,11 +96,11 @@ class UsersDataTable extends DataTable
     {
         return [
             ['data' => 'id', 'name' => 'id', 'title' => 'ID'],
-            ['data' => 'full_name', 'name' => 'full_name', 'title' => 'FULL NAME', 'orderable' => false],
+            ['data' => 'full_name', 'name' => 'full_name', 'title' => 'Full Name', 'orderable' => false],
             ['data' => 'phone_number', 'name' => 'phone_number', 'title' => 'Phone Number'],
             ['data' => 'email', 'name' => 'email', 'title' => 'Email'],
             ['data' => 'status', 'name' => 'status', 'title' => 'Status'],
-            ['data' => 'role_title', 'name' => 'role_title', 'title' => 'User Role'], // Updated to use role_title
+            ['data' => 'role_title', 'name' => 'role_title', 'title' => 'User Role'],
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)
