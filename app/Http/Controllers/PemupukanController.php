@@ -32,7 +32,7 @@ class PemupukanController extends Controller
 
         // Cache dropdown values for 24 hours
         $regionals = Cache::remember('pemupukan_regionals', 60, fn() =>
-            Pemupukan::select('regional')->distinct()->pluck('regional')
+            MasterData::select('rpc')->distinct()->pluck('rpc')
         );
         $kebuns = Cache::remember('pemupukan_kebuns', 60, fn() =>
             Pemupukan::select('kebun')->distinct()->pluck('kebun')

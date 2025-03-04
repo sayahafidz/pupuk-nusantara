@@ -29,7 +29,7 @@ class RencanaPemupukanController extends Controller
 
         // Cache dropdown values (these are small datasets, safe to cache)
         $regionals = Cache::remember('rencana_pemupukan_regionals', 60, fn() =>
-            RencanaPemupukan::select('regional')->distinct()->pluck('regional')->all()
+            MasterData::select('rpc')->distinct()->pluck('rpc')->all()
         );
         $jenisPupuks = Cache::remember('rencana_pemupukan_jenis_pupuks', 60, fn() =>
             RencanaPemupukan::select('jenis_pupuk')->distinct()->pluck('jenis_pupuk')->all()
