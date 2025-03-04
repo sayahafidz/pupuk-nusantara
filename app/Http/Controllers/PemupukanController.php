@@ -345,7 +345,7 @@ class PemupukanController extends Controller
         $pemupukan = Pemupukan::create([
             'id_pupuk' => $validatedData['jenis_pupuk'],
             'regional' => $validatedData['regional'],
-            'kebun' => $validatedData['kebun'],
+            'kebun' => $plant->kode_kebun,
             'afdeling' => $validatedData['afdeling'],
             'blok' => $validatedData['blok'],
             'tahun_tanam' => $validatedData['tahun_tanam'],
