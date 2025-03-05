@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AuthHelper;
+use App\Models\MasterData;
 use App\Models\RencanaRealisasiPemupukan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,8 +21,8 @@ class RencanaRealisasiPemupukanKebunController extends Controller
         $assets = ['data-table'];
 
         // Cache regionals for 24 hours
-        $regionals = \Cache::remember('rencana_realisasi_regionals', 60 * 60 * 24, function () {
-            return RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional');
+        $regionals = \Cache::remember('rencana_realisasi_regionals', 60, function () {
+            return MasterData::select('rpc')->distinct()->pluck('rpc');
         });
 
         // Define defaults
@@ -52,14 +53,16 @@ class RencanaRealisasiPemupukanKebunController extends Controller
                 return $query->select([
                     'regional',
                     'kebun',
+                    'rencana_plant',
                     DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
                     DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
                     DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
                     DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
                     DB::raw("SUM(rencana_total) as rencana_total"),
                     DB::raw("SUM(realisasi_total) as realisasi_total"),
-                ])->groupBy('regional', 'kebun')->get();
+                ])->groupBy('regional', 'kebun', 'rencana_plant')->get();
             });
+
 
             return DataTables::of($data)
                 ->addColumn('rencana_semester_1', fn($row) => number_format($row->rencana_semester_1, 0, ',', '.') . ' Kg')
@@ -109,13 +112,14 @@ class RencanaRealisasiPemupukanKebunController extends Controller
         $data = $query->select([
             'regional',
             'kebun',
+            'rencana_plant',
             DB::raw("SUM(rencana_semester_1) as rencana_semester_1"),
             DB::raw("SUM(realisasi_semester_1) as realisasi_semester_1"),
             DB::raw("SUM(rencana_semester_2) as rencana_semester_2"),
             DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
             DB::raw("SUM(rencana_total) as rencana_total"),
             DB::raw("SUM(realisasi_total) as realisasi_total"),
-        ])->groupBy('regional', 'kebun')->get();
+        ])->groupBy('regional', 'kebun', 'rencana_plant')->get();
 
         return view('rencana-realisasi-pemupukan-kebun.print-rencana-realisasi-kebun', compact('pageTitle', 'data'));
     }

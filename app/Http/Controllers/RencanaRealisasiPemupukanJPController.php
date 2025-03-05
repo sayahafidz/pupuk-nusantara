@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AuthHelper;
+use App\Models\MasterData;
 use App\Models\RencanaRealisasiPemupukan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -23,7 +24,7 @@ class RencanaRealisasiPemupukanJPController extends Controller
 
         // Cache dropdown values for 24 hours
         $regionals = Cache::remember('rencana_realisasi_regionals', 60, fn() =>
-            RencanaRealisasiPemupukan::select('regional')->distinct()->pluck('regional')
+            MasterData::select('rpc')->distinct()->pluck('rpc')
         );
         $kebuns = Cache::remember('rencana_realisasi_kebuns', 60, fn() =>
             RencanaRealisasiPemupukan::select('kebun')->distinct()->pluck('kebun')
@@ -81,6 +82,7 @@ class RencanaRealisasiPemupukanJPController extends Controller
                 return $query->select([
                     'regional',
                     'kebun',
+                    'rencana_plant',
                     'afdeling',
                     'tahun_tanam',
                     'jenis_pupuk',
@@ -90,7 +92,7 @@ class RencanaRealisasiPemupukanJPController extends Controller
                     DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
                     DB::raw("SUM(rencana_total) as rencana_total"),
                     DB::raw("SUM(realisasi_total) as realisasi_total"),
-                ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam', 'jenis_pupuk')->get();
+                ])->groupBy('regional', 'kebun', 'rencana_plant', 'afdeling', 'tahun_tanam', 'jenis_pupuk')->get();
             });
 
             return DataTables::of($data)
@@ -160,6 +162,7 @@ class RencanaRealisasiPemupukanJPController extends Controller
         $data = $query->select([
             'regional',
             'kebun',
+            'rencana_plant',
             'afdeling',
             'tahun_tanam',
             'jenis_pupuk',
@@ -169,7 +172,7 @@ class RencanaRealisasiPemupukanJPController extends Controller
             DB::raw("SUM(realisasi_semester_2) as realisasi_semester_2"),
             DB::raw("SUM(rencana_total) as rencana_total"),
             DB::raw("SUM(realisasi_total) as realisasi_total"),
-        ])->groupBy('regional', 'kebun', 'afdeling', 'tahun_tanam', 'jenis_pupuk')->get();
+        ])->groupBy('regional', 'kebun', 'rencana_plant', 'afdeling', 'tahun_tanam', 'jenis_pupuk')->get();
 
         return view('rencana-realisasi-pemupukan.print-rencana-realisasi-jp', compact('pageTitle', 'data'));
     }

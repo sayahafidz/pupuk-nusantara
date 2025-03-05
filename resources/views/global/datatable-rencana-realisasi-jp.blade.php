@@ -130,7 +130,7 @@
                     }
                     fetch(
                             `/api/tahun-tanam-code/${encodeURIComponent(regional)}/${encodeURIComponent(kebun)}/${encodeURIComponent(afdeling)}`
-                            )
+                        )
                         .then(response => response.json())
                         .then(data => {
                             let tahunTanamOptions = '<option value="">All Tahun Tanam</option>';
@@ -174,6 +174,11 @@
                             data: 'kebun',
                             name: 'kebun',
                             title: 'Kebun'
+                        },
+                        {
+                            data: 'rencana_plant',
+                            name: 'rencana_plant',
+                            title: 'Plant'
                         },
                         {
                             data: 'afdeling',

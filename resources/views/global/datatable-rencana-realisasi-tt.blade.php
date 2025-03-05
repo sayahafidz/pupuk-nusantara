@@ -166,6 +166,11 @@
                             title: 'Kebun'
                         },
                         {
+                            data: 'rencana_plant',
+                            name: 'rencana_plant',
+                            title: 'Plant'
+                        },
+                        {
                             data: 'afdeling',
                             name: 'afdeling',
                             title: 'Afdeling'

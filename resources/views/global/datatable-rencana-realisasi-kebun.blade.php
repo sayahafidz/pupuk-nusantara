@@ -67,6 +67,11 @@
                             title: 'Kebun'
                         },
                         {
+                            data: 'rencana_plant',
+                            name: 'rencana_plant',
+                            title: 'Plant'
+                        },
+                        {
                             data: 'rencana_semester_1',
                             name: 'rencana_semester_1',
                             title: 'Rencana Semester 1'
