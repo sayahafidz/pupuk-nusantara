@@ -42,7 +42,7 @@ class RencanaRealisasiPemupukanAfdController extends Controller
         if ($request->ajax()) {
             $cacheKey = 'rencana_realisasi_' . md5(json_encode($request->all()));
 
-            return Cache::remember($cacheKey, 60 * 5, function () use ($request, $auth_user, $default_regional, $default_kebun) {
+            return Cache::remember($cacheKey, 10, function () use ($request, $auth_user, $default_regional, $default_kebun) {
                 $query = RencanaRealisasiPemupukan::query();
 
                 // Apply role-based filtering

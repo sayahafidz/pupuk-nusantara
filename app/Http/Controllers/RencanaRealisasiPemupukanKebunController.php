@@ -37,7 +37,7 @@ class RencanaRealisasiPemupukanKebunController extends Controller
         if ($request->ajax()) {
             $cacheKey = "rencana_realisasi_{$default_regional}_{$default_kebun}";
 
-            $data = \Cache::remember($cacheKey, 60 * 60, function () use ($auth_user, $request) {
+            $data = \Cache::remember($cacheKey, 10, function () use ($auth_user, $request) {
                 $query = RencanaRealisasiPemupukan::query();
 
                 // Apply regional filter

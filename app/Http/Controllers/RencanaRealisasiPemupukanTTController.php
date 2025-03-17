@@ -56,7 +56,7 @@ class RencanaRealisasiPemupukanTTController extends Controller
 
             $cacheKey = 'rencana_realisasi_' . md5(json_encode($filters));
 
-            $cachedData = Cache::remember($cacheKey, 60 * 5, function () use ($filters) {
+            $cachedData = Cache::remember($cacheKey, 10, function () use ($filters) {
                 $query = RencanaRealisasiPemupukan::query();
 
                 if ($filters['regional']) {

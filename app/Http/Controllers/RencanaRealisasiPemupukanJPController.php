@@ -53,7 +53,7 @@ class RencanaRealisasiPemupukanJPController extends Controller
             $cacheKey = 'rencana_realisasi_' . ($auth_user->regional ?? 'all') . '_' . md5(json_encode($request->all()));
 
             // Cache filtered data for 5 minutes
-            $data = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($auth_user, $request, $default_regional, $default_kebun) {
+            $data = Cache::remember($cacheKey, 10, function () use ($auth_user, $request, $default_regional, $default_kebun) {
                 $query = RencanaRealisasiPemupukan::query();
 
                 // Apply role-based filtering
