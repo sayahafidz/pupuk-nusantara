@@ -66,6 +66,14 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-md-2">
+                            <input type="date" id="filter-tgl-start" class="form-control"
+                                value="{{ request('tgl_pemupukan_start') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="date" id="filter-tgl-end" class="form-control"
+                                value="{{ request('tgl_pemupukan_end') }}">
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table id="dataTable" class="table text-center table-striped w-100"></table>
@@ -96,6 +104,8 @@
                             d.afdeling = $('#filter-afdeling').val();
                             d.tahun_tanam = $('#filter-tahun_tanam').val();
                             d.jenis_pupuk = $('#filter-jenis_pupuk').val();
+                            d.tgl_pemupukan_start = $('#filter-tgl-start').val();
+                            d.tgl_pemupukan_end = $('#filter-tgl-end').val();
                         },
                         cache: true
                     },
@@ -168,7 +178,7 @@
 
                 // Debounce filter changes
                 let debounceTimer;
-                $('#filter-regional, #filter-kebun, #filter-afdeling, #filter-tahun_tanam, #filter-jenis_pupuk').on(
+                $('#filter-regional, #filter-kebun, #filter-afdeling, #filter-tahun_tanam, #filter-jenis_pupuk, #filter-tgl-start, #filter-tgl-end').on(
                     'change',
                     function() {
                         clearTimeout(debounceTimer);
