@@ -174,7 +174,7 @@
                             <thead>
                                 <tr>
                                     <th rowspan="2" class="text-center align-middle">ENTITAS</th>
-                                    <th rowspan="2" class="text-center align-middle">KEBUN</th>
+                                    <th rowspan="2" class="text-center align-middle">Jenis Pupuk</th>
                                     <th colspan="3" class="text-center">Semester I</th>
                                     <th colspan="3" class="text-center">Semester II</th>
                                     <th colspan="3" class="text-center">Tahun 2025</th>
@@ -195,28 +195,68 @@
                                 @php 
                                     $lastEntitas = '';
                                     $entitasCount = [];
+                                    $totalGroups = [
+                                        'Palm Co Regional 1 + KSO',
+                                        'Palm Co Regional 2 + KSO',
+                                        'Total Palm Co',
+                                        'Total Regional KSO',
+                                        'HOLDING'
+                                    ];
                                     
-                                    // First pass to count rows per entity
+                                    // First pass untuk menghitung baris per entitas
                                     foreach($tableData as $data) {
+                                        if (isset($data['is_group_total'])) {
+                                            // Skip grup total
+                                            continue;
+                                        }
+                                        
                                         if (!isset($entitasCount[$data['entitas']])) {
                                             $entitasCount[$data['entitas']] = 0;
                                         }
                                         $entitasCount[$data['entitas']]++;
                                     }
                                 @endphp
-
+        
                                 @foreach($tableData as $index => $data)
-                                    <tr class="{{ $data['kebun'] === 'Jumlah' ? 'table-primary' : '' }}">
-                                        @if($lastEntitas !== $data['entitas'])
-                                            <td rowspan="{{ $entitasCount[$data['entitas']] }}" class="align-middle text-center">
-                                                {{ $data['entitas'] }}
-                                            </td>
+                                    @php
+                                        // Tentukan class berdasarkan jenis baris
+                                        $rowClass = '';
+                                        $isGroupTotal = isset($data['is_group_total']) && $data['is_group_total'] === true;
+                                        
+                                        // Cek apakah ini adalah baris total grup
+                                        if ($isGroupTotal) {
+                                            $rowClass = 'table-success';
+                                        } elseif ($data['kebun'] === 'Jumlah') {
+                                            $rowClass = 'table-primary'; // Warna biru untuk jumlah non-grup
+                                        }
+                                        
+                                        // Cek apakah entitas ini adalah awal dari entitas baru
+                                        $isNewEntity = $lastEntitas !== $data['entitas'];
+                                        
+                                        // Mengatur jumlah baris untuk rowspan
+                                        $rowspan = $isGroupTotal ? 3 : ($entitasCount[$data['entitas']] ?? 0);
+                                    @endphp
+                                    
+                                    <tr class="{{ $rowClass }}">
+                                        @if($isNewEntity)
+                                            @if($isGroupTotal)
+                                                <!-- Grup total dengan rowspan=3 -->
+                                                <td rowspan="3" class="align-middle text-center fw-bold bg-success text-white">
+                                                    {{ $data['entitas'] }}
+                                                </td>
+                                            @else
+                                                <!-- Entitas reguler dengan rowspan sesuai jumlah baris -->
+                                                <td rowspan="{{ $rowspan }}" class="align-middle text-center">
+                                                    {{ $data['entitas'] }}
+                                                </td>
+                                            @endif
                                             @php $lastEntitas = $data['entitas']; @endphp
                                         @endif
-                                        <td>
+                                        
+                                        <td class="{{ $data['kebun'] === 'Jumlah' || $isGroupTotal ? 'fw-bold' : '' }}">
                                             @if($data['kebun'] !== 'Jumlah')
                                                 <span onclick="window.showDetails('{{ $data['entitas'] }}', '{{ $data['kebun'] }}')" 
-                                                    style="cursor: pointer;">
+                                                        style="cursor: pointer; text-decoration: underline;">
                                                     {{ $data['kebun'] }}
                                                 </span>
                                             @else
@@ -225,13 +265,13 @@
                                         </td>
                                         <td class="text-end">{{ number_format($data['semester1_rencana'], 0, ',', '.') }}</td>
                                         <td class="text-end">{{ number_format($data['semester1_realisasi'], 0, ',', '.') }}</td>
-                                        <td class="text-end">{{ number_format($data['semester1_percentage'], 2) }}</td>
+                                        <td class="text-end">{{ number_format($data['semester1_percentage'], 2) }} %</td>
                                         <td class="text-end">{{ number_format($data['semester2_rencana'], 0, ',', '.') }}</td>
                                         <td class="text-end">{{ number_format($data['semester2_realisasi'], 0, ',', '.') }}</td>
-                                        <td class="text-end">{{ number_format($data['semester2_percentage'], 2) }}</td>
+                                        <td class="text-end">{{ number_format($data['semester2_percentage'], 2) }} %</td>
                                         <td class="text-end">{{ number_format($data['tahun_rencana'], 0, ',', '.') }}</td>
                                         <td class="text-end">{{ number_format($data['tahun_realisasi'], 0, ',', '.') }}</td>
-                                        <td class="text-end">{{ number_format($data['tahun_percentage'], 2) }}</td>
+                                        <td class="text-end">{{ number_format($data['tahun_percentage'], 2) }} %</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -301,9 +341,12 @@
             // Initialize the main DataTable
             var mainTable = $('#rencana-pemupukan-table').DataTable({
                 responsive: true,
-                searching: true
+                searching: true,
+                ordering: false, // Disable sorting to maintain custom ordering
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json"
+                }
             });
         });
     </script>
 </x-app-layout>
-
