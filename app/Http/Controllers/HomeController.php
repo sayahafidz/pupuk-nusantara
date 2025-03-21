@@ -684,6 +684,7 @@ class HomeController extends Controller
             $jenisPupukCondition = $isPupukMajemuk ? "jenis_pupuk LIKE '%NPK%'" : "jenis_pupuk NOT LIKE '%NPK%'";
             
             $kebunData = [];
+            $totalData = null;
             
             // Jika ini adalah grup, tampilkan data agregat per entitas
             if ($isGroup) {
@@ -735,8 +736,8 @@ class HomeController extends Controller
                     ];
                 }
                 
-                // Hitung total untuk semua entitas dalam grup
-                $kebunData[] = $this->calculateKebunTotals($kebunData, $entitas);
+                // Hitung total untuk semua entitas dalam grup - simpan untuk ditambahkan nanti
+                $totalData = $this->calculateKebunTotals($kebunData, $entitas);
             } else {
                 // Ini adalah entitas tunggal, tampilkan detail per kebun seperti biasa
                 $kebunList = DB::table('master_data')
@@ -791,9 +792,16 @@ class HomeController extends Controller
                     ];
                 }
                 
-                // Hitung totals untuk semua kebun
-                $kebunData[] = $this->calculateKebunTotals($kebunData, $entitas);
+                // Hitung totals untuk semua kebun - simpan untuk ditambahkan nanti
+                $totalData = $this->calculateKebunTotals($kebunData, $entitas);
             }
+            
+            // Tambahkan total setelah proses data, sehingga akan selalu ada di bagian akhir
+            // if ($totalData) {
+            //    $kebunData[] = $totalData;
+            // }
+            
+            // Kita tidak menambahkan baris total/jumlah ke modal detail
             
             return $kebunData;
         });
