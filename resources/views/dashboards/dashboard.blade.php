@@ -153,8 +153,6 @@
                                     <li><a class="dropdown-item" href="#" data-period="year">Tahun Ini</a></li>
                                 </ul>
                             </div>
-
-
                         </div>
                         <div class="card-body">
                             <div id="d-main" class="d-main"></div>
@@ -163,5 +161,192 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-12 col-lg-12">
+            <div class="card" data-aos="fade-up" data-aos-delay="800">
+                <div class="card-header d-flex justify-content-between flex-wrap">
+                    <div class="header-title">
+                        <h4 class="card-title">Rencana dan Realisasi Pemupukan 2025</h4>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="rencana-pemupukan-table" class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" class="text-center align-middle">ENTITAS</th>
+                                    <th rowspan="2" class="text-center align-middle">Jenis Pupuk</th>
+                                    <th colspan="3" class="text-center">Semester I</th>
+                                    <th colspan="3" class="text-center">Semester II</th>
+                                    <th colspan="3" class="text-center">Tahun 2025</th>
+                                </tr>
+                                <tr>
+                                    <th class="text-center">Rencana (Kg)</th>
+                                    <th class="text-center">Realisasi (Kg)</th>
+                                    <th class="text-center">% Real Thdp Renc</th>
+                                    <th class="text-center">Rencana (Kg)</th>
+                                    <th class="text-center">Realisasi (Kg)</th>
+                                    <th class="text-center">% Real Thdp Renc</th>
+                                    <th class="text-center">Rencana (Kg)</th>
+                                    <th class="text-center">Realisasi (Kg)</th>
+                                    <th class="text-center">% Real Thdp Renc</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php 
+                                    $lastEntitas = '';
+                                    $entitasCount = [];
+                                    $totalGroups = [
+                                        'Palm Co Regional 1 + KSO',
+                                        'Palm Co Regional 2 + KSO',
+                                        'Total Palm Co',
+                                        'Total Regional KSO',
+                                        'HOLDING'
+                                    ];
+                                    
+                                    // First pass untuk menghitung baris per entitas
+                                    foreach($tableData as $data) {
+                                        if (isset($data['is_group_total'])) {
+                                            // Skip grup total
+                                            continue;
+                                        }
+                                        
+                                        if (!isset($entitasCount[$data['entitas']])) {
+                                            $entitasCount[$data['entitas']] = 0;
+                                        }
+                                        $entitasCount[$data['entitas']]++;
+                                    }
+                                @endphp
+        
+                                @foreach($tableData as $index => $data)
+                                    @php
+                                        // Tentukan class berdasarkan jenis baris
+                                        $rowClass = '';
+                                        $isGroupTotal = isset($data['is_group_total']) && $data['is_group_total'] === true;
+                                        
+                                        // Cek apakah ini adalah baris total grup
+                                        if ($isGroupTotal) {
+                                            $rowClass = 'table-success';
+                                        } elseif ($data['kebun'] === 'Jumlah') {
+                                            $rowClass = 'table-primary'; // Warna biru untuk jumlah non-grup
+                                        }
+                                        
+                                        // Cek apakah entitas ini adalah awal dari entitas baru
+                                        $isNewEntity = $lastEntitas !== $data['entitas'];
+                                        
+                                        // Mengatur jumlah baris untuk rowspan
+                                        $rowspan = $isGroupTotal ? 3 : ($entitasCount[$data['entitas']] ?? 0);
+                                    @endphp
+                                    
+                                    <tr class="{{ $rowClass }}">
+                                        @if($isNewEntity)
+                                            @if($isGroupTotal)
+                                                <!-- Grup total dengan rowspan=3 -->
+                                                <td rowspan="3" class="align-middle text-center fw-bold bg-success text-white">
+                                                    {{ $data['entitas'] }}
+                                                </td>
+                                            @else
+                                                <!-- Entitas reguler dengan rowspan sesuai jumlah baris -->
+                                                <td rowspan="{{ $rowspan }}" class="align-middle text-center">
+                                                    {{ $data['entitas'] }}
+                                                </td>
+                                            @endif
+                                            @php $lastEntitas = $data['entitas']; @endphp
+                                        @endif
+                                        
+                                        <td class="{{ $data['kebun'] === 'Jumlah' || $isGroupTotal ? 'fw-bold' : '' }}">
+                                            @if($data['kebun'] !== 'Jumlah')
+                                                <span onclick="window.showDetails('{{ $data['entitas'] }}', '{{ $data['kebun'] }}')" 
+                                                        style="cursor: pointer; text-decoration: underline;">
+                                                    {{ $data['kebun'] }}
+                                                </span>
+                                            @else
+                                                {{ $data['kebun'] }}
+                                            @endif
+                                        </td>
+                                        <td class="text-end">{{ number_format($data['semester1_rencana'], 0, ',', '.') }}</td>
+                                        <td class="text-end">{{ number_format($data['semester1_realisasi'], 0, ',', '.') }}</td>
+                                        <td class="text-end">{{ number_format($data['semester1_percentage'], 2) }} %</td>
+                                        <td class="text-end">{{ number_format($data['semester2_rencana'], 0, ',', '.') }}</td>
+                                        <td class="text-end">{{ number_format($data['semester2_realisasi'], 0, ',', '.') }}</td>
+                                        <td class="text-end">{{ number_format($data['semester2_percentage'], 2) }} %</td>
+                                        <td class="text-end">{{ number_format($data['tahun_rencana'], 0, ',', '.') }}</td>
+                                        <td class="text-end">{{ number_format($data['tahun_realisasi'], 0, ',', '.') }}</td>
+                                        <td class="text-end">{{ number_format($data['tahun_percentage'], 2) }} %</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailModalTitle">Detail Kebun</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="detailModalBody">
+                    <!-- Content will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global function definition for showing details
+        window.showDetails = function(entitas, jenisPupuk) {
+            // Show loading indicator in modal
+            document.getElementById('detailModalTitle').innerText = 'Detail ' + jenisPupuk + ' - ' + entitas;
+            document.getElementById('detailModalBody').innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+            
+            // Show the modal using Bootstrap JS
+            var modalElement = document.getElementById('detailModal');
+            var modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            
+            // Fetch the data
+            fetch('/kebun/details?entitas=' + encodeURIComponent(entitas) + '&jenis_pupuk=' + encodeURIComponent(jenisPupuk))
+                .then(function(response) {
+                    return response.text();
+                })
+                .then(function(html) {
+                    document.getElementById('detailModalBody').innerHTML = html;
+                    
+                    // Initialize DataTable for the details table
+                    setTimeout(function() {
+                        if ($.fn.DataTable.isDataTable('#kebun-details-table')) {
+                            $('#kebun-details-table').DataTable().destroy();
+                        }
+                        
+                        $('#kebun-details-table').DataTable({
+                            responsive: true,
+                            pageLength: 10,
+                        });
+                    }, 100); // Small delay to ensure the DOM is updated
+                })
+                .catch(function(error) {
+                    document.getElementById('detailModalBody').innerHTML = '<div class="alert alert-danger">Terjadi kesalahan saat memuat data. Silakan coba lagi.</div>';
+                });
+        };
+        
+        $(document).ready(function() {
+            // Initialize the main DataTable
+            var mainTable = $('#rencana-pemupukan-table').DataTable({
+                responsive: true,
+                searching: true,
+                ordering: false, // Disable sorting to maintain custom ordering
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json"
+                }
+            });
+        });
+    </script>
 </x-app-layout>

@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\JenisPupuk;
+use App\Models\MasterData;
 use App\Models\Pemupukan;
 use App\Models\RencanaPemupukan;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
@@ -65,8 +68,848 @@ class HomeController extends Controller
 
         // get percentage of jumlah_pupuk pemupukan
         $percentage_pemupukan = ($jumlah_pupuk_rencana > 0) ? ($jumlah_pupuk / $jumlah_pupuk_rencana) * 100 : 0;
+        
+        //
+        $tableData = $this->tableRencanaDanPemupukan($request);
 
-        return view('dashboards.dashboard', compact('assets', 'rencana_pemupukan', 'pemupukan', 'jenis_pupuk', 'jumlah_pupuk', 'jumlah_pupuk_rencana', 'percentage_pemupukan', 'users', 'user'));
+        return view('dashboards.dashboard', compact('assets', 'rencana_pemupukan', 'pemupukan', 'jenis_pupuk', 'jumlah_pupuk', 'jumlah_pupuk_rencana', 'percentage_pemupukan', 'users', 'user', 'tableData'));
+    }
+
+    /**
+     * Tabel rencana dan realisasi pemupukan dengan caching dan pengurutan kustom
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function tableRencanaDanPemupukan(Request $request)
+    {
+        // Cache key dengan timestamp hari
+        $cacheKey = 'table_rencana_pemupukan_ordered_' . date('Y-m-d');
+        
+        // Cek apakah data ada di cache
+        return Cache::remember($cacheKey, now()->addMinutes(30), function () {
+            // Definisikan pengelompokan dan urutan RPC yang diinginkan
+            $summaryEntities = [
+                'Palm Co Regional 1 + KSO' => ['RPC1', 'DSMTU', 'DATIM', 'DJABA'],
+                'Palm Co Regional 2 + KSO' => ['RPC2', 'RPC2N2', 'RPC2N14'],
+            ];
+            
+            // Entitas individual yang tidak dalam grup
+            $individualEntities = ['RPC3', 'RPC4', 'RPC5', 'REG6', 'REG7'];
+            
+            // Get distinct RPC dari master_data
+            $entitas = DB::table('master_data')
+                ->select('rpc')
+                ->distinct()
+                ->whereNotNull('rpc')
+                ->pluck('rpc')
+                ->toArray();
+            
+            // Kategorikan entitas berdasarkan jenisnya untuk total akhir
+            $palmCoEntities = array_filter($entitas, function($rpc) {
+                return strpos($rpc, 'RPC') === 0;
+            });
+            
+            $regionalEntities = array_filter($entitas, function($rpc) {
+                return strpos($rpc, 'REG') === 0 || strpos($rpc, 'DSM') === 0 || 
+                    strpos($rpc, 'DAT') === 0 || strpos($rpc, 'DJA') === 0;
+            });
+            
+            // Definisi final summary
+            $finalSummary = [
+                'Total Palm Co' => $palmCoEntities,
+                'Total Regional KSO' => $regionalEntities,
+                'HOLDING' => $entitas // Semua entitas
+            ];
+            
+            // Ambil semua data rencana dan realisasi sekaligus
+            $rencanaTunggalData = $this->getAllRencanaPemupukanData($entitas, false);
+            $rencanaMajemukData = $this->getAllRencanaPemupukanData($entitas, true);
+            
+            $realisasiTunggalData = $this->getAllRealisasiPemupukanData($entitas, false);
+            $realisasiMajemukData = $this->getAllRealisasiPemupukanData($entitas, true);
+            
+            $tableData = [];
+            
+            // Proses setiap grup entitas
+            foreach ($summaryEntities as $groupName => $groupEntities) {
+                // Tambahkan data untuk setiap entitas dalam grup
+                foreach ($groupEntities as $rpc) {
+                    // Menyiapkan data pupuk tunggal
+                    $pupukTunggalData = $this->preparePupukData(
+                        $rpc, 
+                        'Pupuk Tunggal', 
+                        $rencanaTunggalData[$rpc] ?? [],
+                        $realisasiTunggalData[$rpc] ?? []
+                    );
+                    
+                    // Menyiapkan data pupuk majemuk
+                    $pupukMajemukData = $this->preparePupukData(
+                        $rpc, 
+                        'Pupuk Majemuk',
+                        $rencanaMajemukData[$rpc] ?? [],
+                        $realisasiMajemukData[$rpc] ?? []
+                    );
+                    
+                    // Menyiapkan data jumlah
+                    $jumlahData = $this->calculateTotalData($pupukTunggalData, $pupukMajemukData);
+                    
+                    // Menambahkan ke data tabel
+                    $tableData[] = $pupukTunggalData;
+                    $tableData[] = $pupukMajemukData;
+                    $tableData[] = $jumlahData;
+                }
+                
+                // Tambahkan total grup dengan format yang seragam
+                $this->addFormattedGroupTotal($tableData, $groupName, $groupEntities, 
+                    $rencanaTunggalData, $rencanaMajemukData, $realisasiTunggalData, $realisasiMajemukData);
+            }
+            
+            // Tambahkan entity individual tanpa dikelompokkan
+            foreach ($individualEntities as $rpc) {
+                // Menyiapkan data pupuk tunggal
+                $pupukTunggalData = $this->preparePupukData(
+                    $rpc, 
+                    'Pupuk Tunggal', 
+                    $rencanaTunggalData[$rpc] ?? [],
+                    $realisasiTunggalData[$rpc] ?? []
+                );
+                
+                // Menyiapkan data pupuk majemuk
+                $pupukMajemukData = $this->preparePupukData(
+                    $rpc, 
+                    'Pupuk Majemuk',
+                    $rencanaMajemukData[$rpc] ?? [],
+                    $realisasiMajemukData[$rpc] ?? []
+                );
+                
+                // Menyiapkan data jumlah
+                $jumlahData = $this->calculateTotalData($pupukTunggalData, $pupukMajemukData);
+                
+                // Menambahkan ke data tabel
+                $tableData[] = $pupukTunggalData;
+                $tableData[] = $pupukMajemukData;
+                $tableData[] = $jumlahData;
+            }
+            
+            // Tambahkan total-total akhir
+            foreach ($finalSummary as $groupName => $groupEntities) {
+                $this->addFormattedGroupTotal($tableData, $groupName, $groupEntities, 
+                    $rencanaTunggalData, $rencanaMajemukData, $realisasiTunggalData, $realisasiMajemukData);
+            }
+            
+            return $tableData;
+        });
+    }
+
+    /**
+     * Menambahkan total grup berdasarkan kategori dengan format konsisten
+     * 
+     * @param array &$tableData
+     * @param string $groupName
+     * @param array $entities
+     * @param array $rencanaTunggalData
+     * @param array $rencanaMajemukData
+     * @param array $realisasiTunggalData
+     * @param array $realisasiMajemukData
+     */
+    private function addFormattedGroupTotal(&$tableData, $groupName, $entities, $rencanaTunggalData, $rencanaMajemukData, 
+                                $realisasiTunggalData, $realisasiMajemukData)
+    {
+        // 1. Hitung total untuk pupuk tunggal
+        $totalTunggal = $this->calculateCategoryTotal(
+            $entities, 
+            $rencanaTunggalData, 
+            $realisasiTunggalData
+        );
+        
+        // 2. Hitung total untuk pupuk majemuk
+        $totalMajemuk = $this->calculateCategoryTotal(
+            $entities, 
+            $rencanaMajemukData, 
+            $realisasiMajemukData
+        );
+        
+        // 3. Hitung total gabungan (jumlah)
+        $totalJumlah = [
+            'semester1_rencana' => $totalTunggal['semester1_rencana'] + $totalMajemuk['semester1_rencana'],
+            'semester1_realisasi' => $totalTunggal['semester1_realisasi'] + $totalMajemuk['semester1_realisasi'],
+            'semester2_rencana' => $totalTunggal['semester2_rencana'] + $totalMajemuk['semester2_rencana'],
+            'semester2_realisasi' => $totalTunggal['semester2_realisasi'] + $totalMajemuk['semester2_realisasi'],
+        ];
+        
+        // Hitung tahun dan persentase
+        $totalJumlah['tahun_rencana'] = $totalJumlah['semester1_rencana'] + $totalJumlah['semester2_rencana'];
+        $totalJumlah['tahun_realisasi'] = $totalJumlah['semester1_realisasi'] + $totalJumlah['semester2_realisasi'];
+        
+        // Hitung persentase
+        $totalJumlah['semester1_percentage'] = ($totalJumlah['semester1_rencana'] > 0) ? 
+            ($totalJumlah['semester1_realisasi'] / $totalJumlah['semester1_rencana']) * 100 : 0;
+        
+        $totalJumlah['semester2_percentage'] = ($totalJumlah['semester2_rencana'] > 0) ? 
+            ($totalJumlah['semester2_realisasi'] / $totalJumlah['semester2_rencana']) * 100 : 0;
+        
+        $totalJumlah['tahun_percentage'] = ($totalJumlah['tahun_rencana'] > 0) ? 
+            ($totalJumlah['tahun_realisasi'] / $totalJumlah['tahun_rencana']) * 100 : 0;
+        
+        // Tambahkan ke tabel data dengan format yang konsisten
+        $tableData[] = [
+            'entitas' => $groupName,
+            'kebun' => 'Pupuk Tunggal',
+            'semester1_rencana' => $totalTunggal['semester1_rencana'],
+            'semester1_realisasi' => $totalTunggal['semester1_realisasi'],
+            'semester1_percentage' => $totalTunggal['semester1_percentage'],
+            'semester2_rencana' => $totalTunggal['semester2_rencana'],
+            'semester2_realisasi' => $totalTunggal['semester2_realisasi'],
+            'semester2_percentage' => $totalTunggal['semester2_percentage'],
+            'tahun_rencana' => $totalTunggal['tahun_rencana'],
+            'tahun_realisasi' => $totalTunggal['tahun_realisasi'],
+            'tahun_percentage' => $totalTunggal['tahun_percentage'],
+            'is_group_total' => true
+        ];
+        
+        $tableData[] = [
+            'entitas' => $groupName,
+            'kebun' => 'Pupuk Majemuk',
+            'semester1_rencana' => $totalMajemuk['semester1_rencana'],
+            'semester1_realisasi' => $totalMajemuk['semester1_realisasi'],
+            'semester1_percentage' => $totalMajemuk['semester1_percentage'],
+            'semester2_rencana' => $totalMajemuk['semester2_rencana'],
+            'semester2_realisasi' => $totalMajemuk['semester2_realisasi'],
+            'semester2_percentage' => $totalMajemuk['semester2_percentage'],
+            'tahun_rencana' => $totalMajemuk['tahun_rencana'],
+            'tahun_realisasi' => $totalMajemuk['tahun_realisasi'],
+            'tahun_percentage' => $totalMajemuk['tahun_percentage'],
+            'is_group_total' => true
+        ];
+        
+        $tableData[] = [
+            'entitas' => $groupName,
+            'kebun' => 'Jumlah',
+            'semester1_rencana' => $totalJumlah['semester1_rencana'],
+            'semester1_realisasi' => $totalJumlah['semester1_realisasi'],
+            'semester1_percentage' => $totalJumlah['semester1_percentage'],
+            'semester2_rencana' => $totalJumlah['semester2_rencana'],
+            'semester2_realisasi' => $totalJumlah['semester2_realisasi'],
+            'semester2_percentage' => $totalJumlah['semester2_percentage'],
+            'tahun_rencana' => $totalJumlah['tahun_rencana'],
+            'tahun_realisasi' => $totalJumlah['tahun_realisasi'],
+            'tahun_percentage' => $totalJumlah['tahun_percentage'],
+            'is_group_total' => true
+        ];
+    }
+
+    /**
+     * Menghitung total untuk kategori tertentu
+     * 
+     * @param array $entities
+     * @param array $rencanaData
+     * @param array $realisasiData
+     * @return array
+     */
+    private function calculateCategoryTotal($entities, $rencanaData, $realisasiData)
+    {
+        $semester1Rencana = 0;
+        $semester1Realisasi = 0;
+        $semester2Rencana = 0;
+        $semester2Realisasi = 0;
+        
+        foreach ($entities as $entity) {
+            // Skip jika data entitas tidak ada
+            if (!isset($rencanaData[$entity]) && !isset($realisasiData[$entity])) {
+                continue;
+            }
+            
+            // Tambahkan data rencana
+            $semester1Rencana += ($rencanaData[$entity]['semester1'] ?? 0);
+            $semester2Rencana += ($rencanaData[$entity]['semester2'] ?? 0);
+            
+            // Tambahkan data realisasi
+            $semester1Realisasi += ($realisasiData[$entity]['semester1'] ?? 0);
+            $semester2Realisasi += ($realisasiData[$entity]['semester2'] ?? 0);
+        }
+        
+        // Hitung total tahunan
+        $tahunRencana = $semester1Rencana + $semester2Rencana;
+        $tahunRealisasi = $semester1Realisasi + $semester2Realisasi;
+        
+        // Hitung persentase
+        $semester1Percentage = ($semester1Rencana > 0) ? 
+            ($semester1Realisasi / $semester1Rencana) * 100 : 0;
+        $semester2Percentage = ($semester2Rencana > 0) ? 
+            ($semester2Realisasi / $semester2Rencana) * 100 : 0;
+        $tahunPercentage = ($tahunRencana > 0) ? 
+            ($tahunRealisasi / $tahunRencana) * 100 : 0;
+        
+        return [
+            'semester1_rencana' => $semester1Rencana,
+            'semester1_realisasi' => $semester1Realisasi,
+            'semester1_percentage' => $semester1Percentage,
+            'semester2_rencana' => $semester2Rencana,
+            'semester2_realisasi' => $semester2Realisasi,
+            'semester2_percentage' => $semester2Percentage,
+            'tahun_rencana' => $tahunRencana,
+            'tahun_realisasi' => $tahunRealisasi,
+            'tahun_percentage' => $tahunPercentage,
+        ];
+    }
+
+    /**
+     * Menambahkan data terkelompok ke array tabel
+     * 
+     * @param array &$tableData
+     * @param array $rpcs
+     * @param array $rencanaTunggalData
+     * @param array $rencanaMajemukData
+     * @param array $realisasiTunggalData
+     * @param array $realisasiMajemukData
+     */
+    private function addGroupedData(&$tableData, $rpcs, $rencanaTunggalData, $rencanaMajemukData, $realisasiTunggalData, $realisasiMajemukData)
+    {
+        foreach ($rpcs as $rpc) {
+            // Menyiapkan data pupuk tunggal
+            $pupukTunggalData = $this->preparePupukData(
+                $rpc, 
+                'Pupuk Tunggal', 
+                $rencanaTunggalData[$rpc] ?? [],
+                $realisasiTunggalData[$rpc] ?? []
+            );
+            
+            // Menyiapkan data pupuk majemuk
+            $pupukMajemukData = $this->preparePupukData(
+                $rpc, 
+                'Pupuk Majemuk',
+                $rencanaMajemukData[$rpc] ?? [],
+                $realisasiMajemukData[$rpc] ?? []
+            );
+            
+            // Menyiapkan data jumlah
+            $jumlahData = $this->calculateTotalData($pupukTunggalData, $pupukMajemukData);
+            
+            // Menambahkan ke data tabel
+            $tableData[] = $pupukTunggalData;
+            $tableData[] = $pupukMajemukData;
+            $tableData[] = $jumlahData;
+        }
+    }
+
+    /**
+     * Menghitung total untuk kelompok data
+     * 
+     * @param array $tableData
+     * @param string $groupName
+     * @return array
+     */
+    private function calculateGroupTotal($tableData, $groupName)
+    {
+        // Hanya ambil baris dengan 'kebun' = 'Jumlah' untuk dijumlahkan
+        $jumlahRows = array_filter($tableData, function($row) {
+            return $row['kebun'] === 'Jumlah';
+        });
+        
+        // Total untuk semua kolom numerik
+        $totalRow = [
+            'entitas' => '',
+            'kebun' => $groupName,
+            'semester1_rencana' => array_sum(array_column($jumlahRows, 'semester1_rencana')),
+            'semester1_realisasi' => array_sum(array_column($jumlahRows, 'semester1_realisasi')),
+            'semester1_percentage' => 0,
+            'semester2_rencana' => array_sum(array_column($jumlahRows, 'semester2_rencana')),
+            'semester2_realisasi' => array_sum(array_column($jumlahRows, 'semester2_realisasi')),
+            'semester2_percentage' => 0,
+            'tahun_rencana' => array_sum(array_column($jumlahRows, 'tahun_rencana')),
+            'tahun_realisasi' => array_sum(array_column($jumlahRows, 'tahun_realisasi')),
+            'tahun_percentage' => 0,
+        ];
+        
+        // Hitung persentase untuk totals
+        $totalRow['semester1_percentage'] = ($totalRow['semester1_rencana'] > 0) ? 
+            ($totalRow['semester1_realisasi'] / $totalRow['semester1_rencana']) * 100 : 0;
+        
+        $totalRow['semester2_percentage'] = ($totalRow['semester2_rencana'] > 0) ? 
+            ($totalRow['semester2_realisasi'] / $totalRow['semester2_rencana']) * 100 : 0;
+        
+        $totalRow['tahun_percentage'] = ($totalRow['tahun_rencana'] > 0) ? 
+            ($totalRow['tahun_realisasi'] / $totalRow['tahun_rencana']) * 100 : 0;
+        
+        return $totalRow;
+    }
+
+    /**
+     * Menghitung total untuk kelompok kustom berdasarkan daftar RPC
+     * 
+     * @param array $tableData
+     * @param array $rpcs
+     * @param string $groupName
+     * @return array
+     */
+    private function calculateCustomGroupTotal($tableData, $rpcs, $groupName)
+    {
+        // Filter hanya baris 'Jumlah' yang entitasnya termasuk dalam daftar RPC
+        $jumlahRows = array_filter($tableData, function($row) use ($rpcs) {
+            return $row['kebun'] === 'Jumlah' && in_array($row['entitas'], $rpcs);
+        });
+        
+        // Total untuk semua kolom numerik
+        $totalRow = [
+            'entitas' => '',
+            'kebun' => $groupName,
+            'semester1_rencana' => array_sum(array_column($jumlahRows, 'semester1_rencana')),
+            'semester1_realisasi' => array_sum(array_column($jumlahRows, 'semester1_realisasi')),
+            'semester1_percentage' => 0,
+            'semester2_rencana' => array_sum(array_column($jumlahRows, 'semester2_rencana')),
+            'semester2_realisasi' => array_sum(array_column($jumlahRows, 'semester2_realisasi')),
+            'semester2_percentage' => 0,
+            'tahun_rencana' => array_sum(array_column($jumlahRows, 'tahun_rencana')),
+            'tahun_realisasi' => array_sum(array_column($jumlahRows, 'tahun_realisasi')),
+            'tahun_percentage' => 0,
+        ];
+        
+        // Hitung persentase untuk totals
+        $totalRow['semester1_percentage'] = ($totalRow['semester1_rencana'] > 0) ? 
+            ($totalRow['semester1_realisasi'] / $totalRow['semester1_rencana']) * 100 : 0;
+        
+        $totalRow['semester2_percentage'] = ($totalRow['semester2_rencana'] > 0) ? 
+            ($totalRow['semester2_realisasi'] / $totalRow['semester2_rencana']) * 100 : 0;
+        
+        $totalRow['tahun_percentage'] = ($totalRow['tahun_rencana'] > 0) ? 
+            ($totalRow['tahun_realisasi'] / $totalRow['tahun_rencana']) * 100 : 0;
+        
+        return $totalRow;
+    }
+
+    /**
+     * Mengambil semua data rencana pemupukan untuk mengurangi jumlah query
+     * 
+     * @param array $entitas
+     * @param bool $isMajemuk
+     * @return array
+     */
+    private function getAllRencanaPemupukanData($entitas, $isMajemuk)
+    {
+        $jenisPupukCondition = $isMajemuk ? "jenis_pupuk LIKE '%NPK%'" : "jenis_pupuk NOT LIKE '%NPK%'";
+        
+        $rencanaData = DB::table('rencana_pemupukan')
+            ->select('regional', 'semester_pemupukan', DB::raw('SUM(jumlah_pupuk) as total'))
+            ->whereIn('regional', $entitas)
+            ->whereRaw($jenisPupukCondition)
+            ->groupBy('regional', 'semester_pemupukan')
+            ->get();
+        
+        // Menyusun data dalam format [rpc][semester] = nilai
+        $result = [];
+        foreach ($rencanaData as $item) {
+            if (!isset($result[$item->regional])) {
+                $result[$item->regional] = [
+                    'semester1' => 0,
+                    'semester2' => 0
+                ];
+            }
+            
+            $semesterKey = 'semester' . $item->semester_pemupukan;
+            $result[$item->regional][$semesterKey] = $item->total;
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Mengambil semua data realisasi pemupukan untuk mengurangi jumlah query
+     * 
+     * @param array $entitas
+     * @param bool $isMajemuk
+     * @return array
+     */
+    private function getAllRealisasiPemupukanData($entitas, $isMajemuk)
+    {
+        $jenisPupukCondition = $isMajemuk ? "jenis_pupuk LIKE '%NPK%'" : "jenis_pupuk NOT LIKE '%NPK%'";
+        
+        // Query untuk semester 1
+        $realisasiSemester1 = DB::table('pemupukan')
+            ->select('regional', DB::raw('SUM(jumlah_pupuk) as total'))
+            ->whereIn('regional', $entitas)
+            ->whereRaw('MONTH(tgl_pemupukan) BETWEEN 1 AND 6')
+            ->whereRaw($jenisPupukCondition)
+            ->groupBy('regional')
+            ->get();
+        
+        // Query untuk semester 2
+        $realisasiSemester2 = DB::table('pemupukan')
+            ->select('regional', DB::raw('SUM(jumlah_pupuk) as total'))
+            ->whereIn('regional', $entitas)
+            ->whereRaw('MONTH(tgl_pemupukan) BETWEEN 7 AND 12')
+            ->whereRaw($jenisPupukCondition)
+            ->groupBy('regional')
+            ->get();
+        
+        // Menyusun data
+        $result = [];
+        foreach ($entitas as $rpc) {
+            $result[$rpc] = [
+                'semester1' => 0,
+                'semester2' => 0
+            ];
+        }
+        
+        foreach ($realisasiSemester1 as $item) {
+            $result[$item->regional]['semester1'] = $item->total;
+        }
+        
+        foreach ($realisasiSemester2 as $item) {
+            $result[$item->regional]['semester2'] = $item->total;
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Menyiapkan data pupuk (struktur dan kalkulasi)
+     * 
+     * @param string $rpc
+     * @param string $kebun
+     * @param array $rencanaData
+     * @param array $realisasiData
+     * @return array
+     */
+    private function preparePupukData($rpc, $kebun, $rencanaData, $realisasiData)
+    {
+        $semester1Rencana = $rencanaData['semester1'] ?? 0;
+        $semester2Rencana = $rencanaData['semester2'] ?? 0;
+        $semester1Realisasi = $realisasiData['semester1'] ?? 0;
+        $semester2Realisasi = $realisasiData['semester2'] ?? 0;
+        
+        $tahunRencana = $semester1Rencana + $semester2Rencana;
+        $tahunRealisasi = $semester1Realisasi + $semester2Realisasi;
+        
+        return [
+            'entitas' => $rpc,
+            'kebun' => $kebun,
+            'semester1_rencana' => $semester1Rencana,
+            'semester1_realisasi' => $semester1Realisasi,
+            'semester1_percentage' => ($semester1Rencana > 0) ? 
+                ($semester1Realisasi / $semester1Rencana) * 100 : 0,
+            'semester2_rencana' => $semester2Rencana,
+            'semester2_realisasi' => $semester2Realisasi,
+            'semester2_percentage' => ($semester2Rencana > 0) ? 
+                ($semester2Realisasi / $semester2Rencana) * 100 : 0,
+            'tahun_rencana' => $tahunRencana,
+            'tahun_realisasi' => $tahunRealisasi,
+            'tahun_percentage' => ($tahunRencana > 0) ? 
+                ($tahunRealisasi / $tahunRencana) * 100 : 0,
+        ];
+    }
+
+    /**
+     * Menghitung data total dari pupuk tunggal dan majemuk
+     * 
+     * @param array $pupukTunggalData
+     * @param array $pupukMajemukData
+     * @return array
+     */
+    private function calculateTotalData($pupukTunggalData, $pupukMajemukData)
+    {
+        $semester1Rencana = $pupukTunggalData['semester1_rencana'] + $pupukMajemukData['semester1_rencana'];
+        $semester1Realisasi = $pupukTunggalData['semester1_realisasi'] + $pupukMajemukData['semester1_realisasi'];
+        $semester2Rencana = $pupukTunggalData['semester2_rencana'] + $pupukMajemukData['semester2_rencana'];
+        $semester2Realisasi = $pupukTunggalData['semester2_realisasi'] + $pupukMajemukData['semester2_realisasi'];
+        $tahunRencana = $pupukTunggalData['tahun_rencana'] + $pupukMajemukData['tahun_rencana'];
+        $tahunRealisasi = $pupukTunggalData['tahun_realisasi'] + $pupukMajemukData['tahun_realisasi'];
+        
+        return [
+            'entitas' => $pupukTunggalData['entitas'],
+            'kebun' => 'Jumlah',
+            'semester1_rencana' => $semester1Rencana,
+            'semester1_realisasi' => $semester1Realisasi,
+            'semester1_percentage' => ($semester1Rencana > 0) ? 
+                ($semester1Realisasi / $semester1Rencana) * 100 : 0,
+            'semester2_rencana' => $semester2Rencana,
+            'semester2_realisasi' => $semester2Realisasi,
+            'semester2_percentage' => ($semester2Rencana > 0) ? 
+                ($semester2Realisasi / $semester2Rencana) * 100 : 0,
+            'tahun_rencana' => $tahunRencana,
+            'tahun_realisasi' => $tahunRealisasi,
+            'tahun_percentage' => ($tahunRencana > 0) ? 
+                ($tahunRealisasi / $tahunRencana) * 100 : 0,
+        ];
+    }
+
+    /**
+     * Mendapatkan detail kebun berdasarkan entitas dan jenis pupuk dengan caching
+     * Mendukung juga entitas kelompok
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function getKebunDetails(Request $request)
+    {
+        $entitas = $request->input('entitas');
+        $jenisPupuk = $request->input('jenis_pupuk');
+        
+        // Cache key berdasarkan entitas dan jenis pupuk
+        $cacheKey = 'kebun_details_' . md5($entitas . '_' . $jenisPupuk . '_' . date('Y-m-d'));
+        
+        // Cek cache dan proses data
+        $kebunData = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($entitas, $jenisPupuk) {
+            // Daftar grup entitas
+            $groupEntities = [
+                'Palm Co Regional 1 + KSO' => ['RPC1', 'DSMTU', 'DATIM', 'DJABA'],
+                'Palm Co Regional 2 + KSO' => ['RPC2', 'RPC2N2', 'RPC2N14'],
+                'Total Palm Co' => [], // Diisi nanti
+                'Total Regional KSO' => [], // Diisi nanti
+                'HOLDING' => [] // Diisi nanti
+            ];
+            
+            // Kategorikan entitas untuk Total Palm Co dan Total Regional KSO
+            $allEntities = DB::table('master_data')->select('rpc')->distinct()->pluck('rpc')->toArray();
+            
+            $palmCoEntities = array_filter($allEntities, function($rpc) {
+                return strpos($rpc, 'RPC') === 0;
+            });
+            
+            $regionalEntities = array_filter($allEntities, function($rpc) {
+                return strpos($rpc, 'REG') === 0 || strpos($rpc, 'DSM') === 0 || 
+                    strpos($rpc, 'DAT') === 0 || strpos($rpc, 'DJA') === 0;
+            });
+            
+            $groupEntities['Total Palm Co'] = $palmCoEntities;
+            $groupEntities['Total Regional KSO'] = $regionalEntities;
+            $groupEntities['HOLDING'] = $allEntities;
+            
+            // Cek apakah entitas adalah grup
+            $isGroup = isset($groupEntities[$entitas]);
+            $entities = $isGroup ? $groupEntities[$entitas] : [$entitas];
+            
+            // Tentukan apakah kita mencari NPK (pupuk majemuk) atau tidak (pupuk tunggal)
+            $isPupukMajemuk = ($jenisPupuk === 'Pupuk Majemuk');
+            $jenisPupukCondition = $isPupukMajemuk ? "jenis_pupuk LIKE '%NPK%'" : "jenis_pupuk NOT LIKE '%NPK%'";
+            
+            $kebunData = [];
+            
+            // Jika ini adalah grup, tampilkan data agregat per entitas
+            if ($isGroup) {
+                foreach ($entities as $entity) {
+                    // Get all kebun associated with this entity
+                    $kebunList = DB::table('master_data')
+                        ->where('rpc', $entity)
+                        ->select('kode_kebun', 'nama_kebun')
+                        ->distinct()
+                        ->get();
+                    
+                    // Ambil data rencana untuk entity ini
+                    $rencanaData = $this->getKebunRencanaData($entity, $jenisPupukCondition);
+                    
+                    // Ambil data realisasi untuk entity ini
+                    $realisasiData = $this->getKebunRealisasiData($entity, $jenisPupukCondition);
+                    
+                    // Hitung total per entity (bukan per kebun)
+                    $totalRencanaSemester1 = array_sum($rencanaData['semester1']);
+                    $totalRencanaSemester2 = array_sum($rencanaData['semester2']);
+                    $totalRealisasiSemester1 = array_sum($realisasiData['semester1']);
+                    $totalRealisasiSemester2 = array_sum($realisasiData['semester2']);
+                    
+                    // Hitung persentase
+                    $semester1Percentage = ($totalRencanaSemester1 > 0) ? 
+                        ($totalRealisasiSemester1 / $totalRencanaSemester1) * 100 : 0;
+                        
+                    $semester2Percentage = ($totalRencanaSemester2 > 0) ? 
+                        ($totalRealisasiSemester2 / $totalRencanaSemester2) * 100 : 0;
+                    
+                    $tahunRencana = $totalRencanaSemester1 + $totalRencanaSemester2;
+                    $tahunRealisasi = $totalRealisasiSemester1 + $totalRealisasiSemester2;
+                    $tahunPercentage = ($tahunRencana > 0) ? 
+                        ($tahunRealisasi / $tahunRencana) * 100 : 0;
+                    
+                    $kebunData[] = [
+                        'entitas' => $entitas,
+                        'kode_kebun' => $entity,
+                        'kebun' => $entity,
+                        'semester1_rencana' => $totalRencanaSemester1,
+                        'semester1_realisasi' => $totalRealisasiSemester1,
+                        'semester1_percentage' => $semester1Percentage,
+                        'semester2_rencana' => $totalRencanaSemester2,
+                        'semester2_realisasi' => $totalRealisasiSemester2,
+                        'semester2_percentage' => $semester2Percentage,
+                        'tahun_rencana' => $tahunRencana,
+                        'tahun_realisasi' => $tahunRealisasi,
+                        'tahun_percentage' => $tahunPercentage,
+                    ];
+                }
+                
+                // Hitung total untuk semua entitas dalam grup
+                $kebunData[] = $this->calculateKebunTotals($kebunData, $entitas);
+            } else {
+                // Ini adalah entitas tunggal, tampilkan detail per kebun seperti biasa
+                $kebunList = DB::table('master_data')
+                    ->where('rpc', $entitas)
+                    ->select('kode_kebun', 'nama_kebun')
+                    ->distinct()
+                    ->get();
+                
+                // Ambil data rencana pemupukan sekali untuk semua kebun
+                $rencanaData = $this->getKebunRencanaData($entitas, $jenisPupukCondition);
+                
+                // Ambil data realisasi pemupukan sekali untuk semua kebun
+                $realisasiData = $this->getKebunRealisasiData($entitas, $jenisPupukCondition);
+                
+                foreach ($kebunList as $kebun) {
+                    $kodeKebun = $kebun->kode_kebun;
+                    $namaKebun = $kebun->nama_kebun;
+                    
+                    // Ambil data rencana dari hasil query sebelumnya
+                    $rencanaSemester1 = $rencanaData['semester1'][$kodeKebun] ?? 0;
+                    $rencanaSemester2 = $rencanaData['semester2'][$kodeKebun] ?? 0;
+                    
+                    // Ambil data realisasi dari hasil query sebelumnya
+                    $realisasiSemester1 = $realisasiData['semester1'][$kodeKebun] ?? 0;
+                    $realisasiSemester2 = $realisasiData['semester2'][$kodeKebun] ?? 0;
+                    
+                    // Hitung persentase
+                    $semester1Percentage = ($rencanaSemester1 > 0) ? 
+                        ($realisasiSemester1 / $rencanaSemester1) * 100 : 0;
+                        
+                    $semester2Percentage = ($rencanaSemester2 > 0) ? 
+                        ($realisasiSemester2 / $rencanaSemester2) * 100 : 0;
+                    
+                    $tahunRencana = $rencanaSemester1 + $rencanaSemester2;
+                    $tahunRealisasi = $realisasiSemester1 + $realisasiSemester2;
+                    $tahunPercentage = ($tahunRencana > 0) ? 
+                        ($tahunRealisasi / $tahunRencana) * 100 : 0;
+                    
+                    $kebunData[] = [
+                        'entitas' => $entitas,
+                        'kode_kebun' => $kodeKebun,
+                        'kebun' => $namaKebun,
+                        'semester1_rencana' => $rencanaSemester1,
+                        'semester1_realisasi' => $realisasiSemester1,
+                        'semester1_percentage' => $semester1Percentage,
+                        'semester2_rencana' => $rencanaSemester2,
+                        'semester2_realisasi' => $realisasiSemester2,
+                        'semester2_percentage' => $semester2Percentage,
+                        'tahun_rencana' => $tahunRencana,
+                        'tahun_realisasi' => $tahunRealisasi,
+                        'tahun_percentage' => $tahunPercentage,
+                    ];
+                }
+                
+                // Hitung totals untuk semua kebun
+                $kebunData[] = $this->calculateKebunTotals($kebunData, $entitas);
+            }
+            
+            return $kebunData;
+        });
+        
+        // Return view dengan data
+        return view('dashboards.kebun-details-table', [
+            'kebunData' => $kebunData,
+            'jenisPupuk' => $jenisPupuk,
+            'entitas' => $entitas,
+            'isGroup' => isset($groupEntities[$entitas])
+        ]);
+    }
+    
+    /**
+     * Mendapatkan data rencana untuk semua kebun dengan sekali query
+     * 
+     * @param string $entitas
+     * @param string $jenisPupukCondition
+     * @return array
+     */
+    private function getKebunRencanaData($entitas, $jenisPupukCondition)
+    {
+        // Query untuk semester 1
+        $rencanaSemester1 = DB::table('rencana_pemupukan')
+            ->select('kebun', DB::raw('SUM(jumlah_pupuk) as total'))
+            ->where('regional', $entitas)
+            ->where('semester_pemupukan', 1)
+            ->whereRaw($jenisPupukCondition)
+            ->groupBy('kebun')
+            ->pluck('total', 'kebun')
+            ->toArray();
+        
+        // Query untuk semester 2
+        $rencanaSemester2 = DB::table('rencana_pemupukan')
+            ->select('kebun', DB::raw('SUM(jumlah_pupuk) as total'))
+            ->where('regional', $entitas)
+            ->where('semester_pemupukan', 2)
+            ->whereRaw($jenisPupukCondition)
+            ->groupBy('kebun')
+            ->pluck('total', 'kebun')
+            ->toArray();
+        
+        return [
+            'semester1' => $rencanaSemester1,
+            'semester2' => $rencanaSemester2
+        ];
+    }
+    
+    /**
+     * Mendapatkan data realisasi untuk semua kebun dengan sekali query
+     * 
+     * @param string $entitas
+     * @param string $jenisPupukCondition
+     * @return array
+     */
+    private function getKebunRealisasiData($entitas, $jenisPupukCondition)
+    {
+        // Query untuk semester 1
+        $realisasiSemester1 = DB::table('pemupukan')
+            ->select('kebun', DB::raw('SUM(jumlah_pupuk) as total'))
+            ->where('regional', $entitas)
+            ->whereRaw('MONTH(tgl_pemupukan) BETWEEN 1 AND 6')
+            ->whereRaw($jenisPupukCondition)
+            ->groupBy('kebun')
+            ->pluck('total', 'kebun')
+            ->toArray();
+        
+        // Query untuk semester 2
+        $realisasiSemester2 = DB::table('pemupukan')
+            ->select('kebun', DB::raw('SUM(jumlah_pupuk) as total'))
+            ->where('regional', $entitas)
+            ->whereRaw('MONTH(tgl_pemupukan) BETWEEN 7 AND 12')
+            ->whereRaw($jenisPupukCondition)
+            ->groupBy('kebun')
+            ->pluck('total', 'kebun')
+            ->toArray();
+        
+        return [
+            'semester1' => $realisasiSemester1,
+            'semester2' => $realisasiSemester2
+        ];
+    }
+    
+    /**
+     * Menghitung total untuk semua kebun
+     * 
+     * @param array $kebunData
+     * @param string $entitas
+     * @return array
+     */
+    private function calculateKebunTotals($kebunData, $entitas)
+    {
+        $totalData = [
+            'entitas' => $entitas,
+            'kode_kebun' => '',
+            'kebun' => 'Jumlah',
+            'semester1_rencana' => array_sum(array_column($kebunData, 'semester1_rencana')),
+            'semester1_realisasi' => array_sum(array_column($kebunData, 'semester1_realisasi')),
+            'semester1_percentage' => 0,
+            'semester2_rencana' => array_sum(array_column($kebunData, 'semester2_rencana')),
+            'semester2_realisasi' => array_sum(array_column($kebunData, 'semester2_realisasi')),
+            'semester2_percentage' => 0,
+            'tahun_rencana' => array_sum(array_column($kebunData, 'tahun_rencana')),
+            'tahun_realisasi' => array_sum(array_column($kebunData, 'tahun_realisasi')),
+            'tahun_percentage' => 0,
+        ];
+        
+        // Hitung persentase untuk totals
+        $totalData['semester1_percentage'] = ($totalData['semester1_rencana'] > 0) ? 
+            ($totalData['semester1_realisasi'] / $totalData['semester1_rencana']) * 100 : 0;
+        $totalData['semester2_percentage'] = ($totalData['semester2_rencana'] > 0) ? 
+            ($totalData['semester2_realisasi'] / $totalData['semester2_rencana']) * 100 : 0;
+        $totalData['tahun_percentage'] = ($totalData['tahun_rencana'] > 0) ? 
+            ($totalData['tahun_realisasi'] / $totalData['tahun_rencana']) * 100 : 0;
+        
+        return $totalData;
     }
 
     /*
