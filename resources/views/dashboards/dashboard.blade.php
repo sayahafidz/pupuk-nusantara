@@ -282,7 +282,7 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Modal for Kebun details -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -300,17 +300,64 @@
         </div>
     </div>
 
+    <!-- Modal for Afdeling details -->
+    <div class="modal fade" id="afdelingModal" tabindex="-1" aria-labelledby="afdelingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="afdelingModalTitle">Detail Afdeling</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="afdelingModalBody">
+                    <!-- Content will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Global variables untuk menyimpan instance modal
+        let detailModal = null;
+        let afdelingModal = null;
+        
+        // Function untuk membersihkan DOM dan event listeners saat modal ditutup
+        function cleanupModal(modalElement) {
+            // Hapus event listeners yang terkait dengan modal
+            $(modalElement).find('[data-bs-dismiss="modal"]').off('click');
+            
+            // Pastikan modal backdrop dihapus
+            $('.modal-backdrop').remove();
+            
+            // Reset body styling
+            $('body').removeClass('modal-open');
+            $('body').css('overflow', '');
+            $('body').css('padding-right', '');
+        }
+        
         // Global function definition for showing details
         window.showDetails = function(entitas, jenisPupuk) {
             // Show loading indicator in modal
             document.getElementById('detailModalTitle').innerText = 'Detail ' + jenisPupuk + ' - ' + entitas;
             document.getElementById('detailModalBody').innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
             
+            // Destroy existing modals if they exist
+            if (detailModal) {
+                detailModal.hide();
+                detailModal.dispose();
+            }
+            
             // Show the modal using Bootstrap JS
             var modalElement = document.getElementById('detailModal');
-            var modal = new bootstrap.Modal(modalElement);
-            modal.show();
+            detailModal = new bootstrap.Modal(modalElement);
+            detailModal.show();
+            
+            // Listen for modal hidden event to clean up properly
+            $(modalElement).on('hidden.bs.modal', function () {
+                cleanupModal(modalElement);
+            });
             
             // Fetch the data
             fetch('/kebun/details?entitas=' + encodeURIComponent(entitas) + '&jenis_pupuk=' + encodeURIComponent(jenisPupuk))
@@ -326,18 +373,96 @@
                             $('#kebun-details-table').DataTable().destroy();
                         }
                         
-                        $('#kebun-details-table').DataTable({
+                        var kebunTable = $('#kebun-details-table').DataTable({
                             responsive: true,
                             pageLength: 10,
+                            language: {
+                                url: "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json"
+                            }
                         });
+                        
+                        // Refresh table layout after init to avoid visual glitches
+                        kebunTable.columns.adjust().draw();
                     }, 100); // Small delay to ensure the DOM is updated
                 })
                 .catch(function(error) {
                     document.getElementById('detailModalBody').innerHTML = '<div class="alert alert-danger">Terjadi kesalahan saat memuat data. Silakan coba lagi.</div>';
+                    console.error('Error loading kebun details:', error);
                 });
         };
         
+        // New function for showing afdeling details
+        window.showAfdelingDetails = function(entitas, kebun, jenisPupuk) {
+            // Show loading indicator in modal
+            document.getElementById('afdelingModalTitle').innerText = 'Detail Afdeling - ' + kebun + ' (' + jenisPupuk + ')';
+            document.getElementById('afdelingModalBody').innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+            
+            // Destroy existing modal if it exists
+            if (afdelingModal) {
+                afdelingModal.hide();
+                afdelingModal.dispose();
+            }
+            
+            // Show the modal using Bootstrap JS
+            var modalElement = document.getElementById('afdelingModal');
+            afdelingModal = new bootstrap.Modal(modalElement);
+            afdelingModal.show();
+            
+            // Listen for modal hidden event to clean up properly
+            $(modalElement).on('hidden.bs.modal', function () {
+                cleanupModal(modalElement);
+            });
+            
+            // Fetch the data
+            fetch('/afdeling/details?entitas=' + encodeURIComponent(entitas) + '&kebun=' + encodeURIComponent(kebun) + '&jenis_pupuk=' + encodeURIComponent(jenisPupuk))
+                .then(function(response) {
+                    return response.text();
+                })
+                .then(function(html) {
+                    document.getElementById('afdelingModalBody').innerHTML = html;
+                    
+                    // Initialize DataTable for the afdeling details table
+                    setTimeout(function() {
+                        if ($.fn.DataTable.isDataTable('#afdeling-details-table')) {
+                            $('#afdeling-details-table').DataTable().destroy();
+                        }
+                        
+                        var afdelingTable = $('#afdeling-details-table').DataTable({
+                            responsive: true,
+                            pageLength: 10,
+                            language: {
+                                url: "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json"
+                            }
+                        });
+                        
+                        // Refresh table layout after init
+                        afdelingTable.columns.adjust().draw();
+                    }, 100); // Small delay to ensure the DOM is updated
+                })
+                .catch(function(error) {
+                    document.getElementById('afdelingModalBody').innerHTML = '<div class="alert alert-danger">Terjadi kesalahan saat memuat data. Silakan coba lagi.</div>';
+                    console.error('Error loading afdeling details:', error);
+                });
+        };
+        
+        // Additional event listeners for the "Tutup" buttons to ensure proper cleanup
         $(document).ready(function() {
+            // For detailModal
+            $('#detailModal .btn-secondary, #detailModal .btn-close').on('click', function() {
+                if (detailModal) {
+                    detailModal.hide();
+                }
+                cleanupModal(document.getElementById('detailModal'));
+            });
+            
+            // For afdelingModal
+            $('#afdelingModal .btn-secondary, #afdelingModal .btn-close').on('click', function() {
+                if (afdelingModal) {
+                    afdelingModal.hide();
+                }
+                cleanupModal(document.getElementById('afdelingModal'));
+            });
+            
             // Initialize the main DataTable
             var mainTable = $('#rencana-pemupukan-table').DataTable({
                 responsive: true,

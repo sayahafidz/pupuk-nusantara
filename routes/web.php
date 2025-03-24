@@ -73,6 +73,7 @@ Route::get('/api/users', [UserController::class, 'getUsers']);
 Route::group(['middleware' => ['auth', 'cors']], function () {
     // New
     Route::get('/kebun/details', [HomeController::class, 'getKebunDetails'])->name('kebun.details');
+    Route::get('/afdeling/details', [HomeController::class, 'getAfdelingDetails'])->name('afdeling.details');
 
     // Permission Module
     Route::get('/role-permission', [RolePermission::class, 'index'])->name('role.permission.list');
