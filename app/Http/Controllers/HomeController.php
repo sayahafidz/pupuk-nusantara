@@ -75,6 +75,8 @@ class HomeController extends Controller
         return view('dashboards.dashboard', compact('assets', 'rencana_pemupukan', 'pemupukan', 'jenis_pupuk', 'jumlah_pupuk', 'jumlah_pupuk_rencana', 'percentage_pemupukan', 'users', 'user', 'tableData'));
     }
 
+
+
     /**
      * Tabel rencana dan realisasi pemupukan dengan caching dan pengurutan kustom
      * 

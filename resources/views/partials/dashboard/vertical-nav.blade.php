@@ -21,8 +21,83 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ activeRoute(route('input-pemupukan')) }}" aria-current="page"
-            href="{{ route('input-pemupukan') }}">
+        <a class="nav-link {{ activeRoute(route('dashboard-tbm')) }}" aria-current="page"
+            href="{{ route('dashboard-tbm') }}"> <i class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                    class="bi bi-bar-chart" viewBox="0 0 16 16">
+                    <path d="M0 0h1v15h15v1H0V0zm4 13h1V6H4v7zm3 0h1V2H7v11zm3 0h1V9h-1v4z" />
+                </svg>
+            </i>
+            <span class="item-name">Dashboard TBM</span>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-toggle="collapse" href="#sidebar-pemupukan-tbm" role="button"
+            aria-expanded="false" aria-controls="sidebar-pemupukan-tbm">
+            <i class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                    class="bi bi-folder" viewBox="0 0 16 16">
+                    <path
+                        d="M9.828 4a.5.5 0 0 1 .354.146l.646.647H14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4.5a.5.5 0 0 1 .354.146l.646.647H9.828zM2 3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H9.828a.5.5 0 0 1-.354-.146l-.646-.647H6.172a.5.5 0 0 1-.354-.146L5.172 4H2z" />
+                </svg>
+            </i>
+            <span class="item-name">Pemupukan TBM</span>
+            <i class="right-icon">
+                <svg class="icon-18" xmlns="http://www.w3.org/2000/svg" width="18" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </i>
+        </a>
+        <ul class="sub-nav collapse" id="sidebar-pemupukan-tbm" data-bs-parent="#sidebar-menu">
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('input-pemupukan-tbm')) }}" aria-current="page"
+                    href="{{ route('input-pemupukan-tbm') }}">
+                    <i class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-pencil" viewBox="0 0 16 16">
+                            <path
+                                d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708l-9.5 9.5a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l9.5-9.5zM11.207 3L13 4.793 14.793 3 13 1.207 11.207 3zM12 5l-1-1L3 12v1h1l8-8z" />
+                        </svg>
+                    </i>
+                    <span class="item-name">Input Pemupukan<br>TBM</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('pemupukan-tbm.index')) }}" aria-current="page"
+                    href="{{ route('pemupukan-tbm.index') }}">
+                    <i class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-file-earmark-spreadsheet" viewBox="0 0 16 16">
+                            <path
+                                d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V9H3V2a1 1 0 0 1 1-1h5.5zM3 12v-2h2v2zm0 1h2v2H4a1 1 0 0 1-1-1zm3 2v-2h3v2zm4 0v-2h3v1a1 1 0 0 1-1 1zm3-3h-3v-2h3zm-7 0v-2h3v2z" />
+                        </svg>
+                    </i>
+                    <span class="item-name">Rekap Pemupukan<br>TBM</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('rencana-pemupukan-tbm.index')) }}"
+                    href="{{ route('rencana-pemupukan-tbm.index') }}">
+                    <i class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-journals" viewBox="0 0 16 16">
+                            <path
+                                d="M5 0h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2 2 2 0 0 1-2 2H3a2 2 0 0 1-2-2h1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1H1a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v9a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1H3a2 2 0 0 1 2-2" />
+                            <path
+                                d="M1 6v-.5a.5.5 0 0 1 1 0V6h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V9h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 2.5v.5H.5a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1H2v-.5a.5.5 0 0 0-1 0" />
+                        </svg>
+                    </i>
+                    <span class="item-name">Rencana Pemupukan<br>TBM</span>
+                </a>
+            </li>
+        </ul>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-toggle="collapse" href="#sidebar-pemupukan-tm" role="button"
+            aria-expanded="false" aria-controls="sidebar-pemupukan-tm">
             <i class="icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                     class="bi bi-journal-album" viewBox="0 0 16 16">
@@ -34,38 +109,63 @@
                         d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z" />
                 </svg>
             </i>
-            <span class="item-name">Input Pemupukan</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ activeRoute(route('rekap-pemupukan')) }}" aria-current="page"
-            href="{{ route('rekap-pemupukan') }}">
-            <i class="icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                    class="bi bi-file-earmark-spreadsheet" viewBox="0 0 16 16">
-                    <path
-                        d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V9H3V2a1 1 0 0 1 1-1h5.5zM3 12v-2h2v2zm0 1h2v2H4a1 1 0 0 1-1-1zm3 2v-2h3v2zm4 0v-2h3v1a1 1 0 0 1-1 1zm3-3h-3v-2h3zm-7 0v-2h3v2z" />
+            <span class="item-name">Pemupukan TM</span>
+            <i class="right-icon">
+                <svg class="icon-18" xmlns="http://www.w3.org/2000/svg" width="18" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </i>
-            <span class="item-name">Rekap Pemupukan</span>
         </a>
+        <ul class="sub-nav collapse" id="sidebar-pemupukan-tm" data-bs-parent="#sidebar-menu">
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('input-pemupukan')) }}"
+                    href="{{ route('input-pemupukan') }}">
+                    <i class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-pencil-square" viewBox="0 0 16 16">
+                            <path
+                                d="M15.502 1.94a.5.5 0 0 1 0 .706l-1 1a.5.5 0 0 1-.708 0l-1-1a.5.5 0 0 1 0-.708l1-1a.5.5 0 0 1 .708 0l1 1zM13.5 3.207l-1-1L4 10.707V12h1.293l8.207-8.207z" />
+                            <path fill-rule="evenodd"
+                                d="M1 13.5V2a1 1 0 0 1 1-1h9.5a1 1 0 0 1 1 1v9.5a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1zm1-1h9.5V2H2v10.5z" />
+                        </svg>
+                    </i>
+                    <span class="item-name">Input Pemupukan TM</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('rekap-pemupukan')) }}"
+                    href="{{ route('rekap-pemupukan') }}">
+                    <i class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-file-earmark-bar-graph" viewBox="0 0 16 16">
+                            <path
+                                d="M9.293 9.5a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-1.5a.5.5 0 0 1-.5-.5v-3zM6.293 7a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 .5.5v5.5a.5.5 0 0 1-.5.5h-1.5a.5.5 0 0 1-.5-.5V7zM3.5 10a.5.5 0 0 1 .5-.5H5a.5.5 0 0 1 .5.5v2.5a.5.5 0 0 1-.5.5H4a.5.5 0 0 1-.5-.5V10z" />
+                            <path
+                                d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zM13 4.5L9.5 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z" />
+                        </svg>
+                    </i>
+                    <span class="item-name">Rekap Pemupukan TM</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ activeRoute(route('rencana-pemupukan.index')) }}"
+                    href="{{ route('rencana-pemupukan.index') }}">
+                    <i class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-calendar-check" viewBox="0 0 16 16">
+                            <path
+                                d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z" />
+                            <path
+                                d="M10.854 6.854a.5.5 0 0 0-.708-.708L7.5 8.793 6.354 7.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0l3-3z" />
+                        </svg>
+                    </i>
+                    <span class="item-name">Rencana Pemupukan TM</span>
+                </a>
+            </li>
+        </ul>
     </li>
 
-    <li class="nav-item">
-        <a class="nav-link {{ activeRoute(route('rencana-pemupukan.index')) }}"
-            href="{{ route('rencana-pemupukan.index') }}">
-            <i class="icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                    class="bi bi-journals" viewBox="0 0 16 16">
-                    <path
-                        d="M5 0h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2 2 2 0 0 1-2 2H3a2 2 0 0 1-2-2h1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1H1a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v9a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1H3a2 2 0 0 1 2-2" />
-                    <path
-                        d="M1 6v-.5a.5.5 0 0 1 1 0V6h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V9h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 2.5v.5H.5a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1H2v-.5a.5.5 0 0 0-1 0" />
-                </svg>
-            </i>
-            <span class="item-name">Rencana Pemupukan</span>
-        </a>
-    </li>
     <li class="nav-item">
         <a class="nav-link collapsed" data-bs-toggle="collapse" href="#sidebar-rencana-pemupukan" role="button"
             aria-expanded="false" aria-controls="sidebar-rencana-pemupukan">
@@ -89,14 +189,14 @@
                 <a class="nav-link {{ activeRoute(route('rencana-realisasi-pemupukan.index')) }}"
                     href="{{ route('rencana-realisasi-pemupukan.index') }}">
                     <i class="icon">
-                        <svg class="icon-10" xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24"
-                            fill="currentColor">
-                            <g>
-                                <circle cx="12" cy="12" r="8" fill="currentColor"></circle>
-                            </g>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-list-check" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd"
+                                d="M10.854 6.854a.5.5 0 0 0-.708-.708L7.5 8.793 6.354 7.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0l3-3z" />
+                            <path
+                                d="M1.5 3.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5z" />
                         </svg>
                     </i>
-                    <i class="sidenav-mini-icon"> R </i>
                     <span class="item-name">All</span>
                 </a>
             </li>
@@ -104,28 +204,27 @@
                 <a class="nav-link {{ activeRoute(route('ren-rel-pem-keb.index')) }}"
                     href="{{ route('ren-rel-pem-keb.index') }}">
                     <i class="icon">
-                        <svg class="icon-10" xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24"
-                            fill="currentColor">
-                            <g>
-                                <circle cx="12" cy="12" r="8" fill="currentColor"></circle>
-                            </g>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-house-door" viewBox="0 0 16 16">
+                            <path
+                                d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6a.5.5 0 0 0 .708.708L8 1.707l5.646 5.647a.5.5 0 0 0 .708-.708l-6-6z" />
+                            <path
+                                d="M13 2.5v6.793l1 1V2.5a1 1 0 0 0-1-1h-3.5a.5.5 0 0 0 0 1H13zM2 8.293l1-1V2.5a1 1 0 0 1 1-1h3.5a.5.5 0 0 1 0 1H4v5.793l1 1V2.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v6.793l1-1z" />
                         </svg>
                     </i>
-                    <i class="sidenav-mini-icon"> K </i>
                     <span class="item-name">Kebun</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ activeRoute(route('ren-rel-pem-afd.index')) }}"
-                    href="{{ route('ren-rel-pem-afd.index') }}"> <i class="icon">
-                        <svg class="icon-10" xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24"
-                            fill="currentColor">
-                            <g>
-                                <circle cx="12" cy="12" r="8" fill="currentColor"></circle>
-                            </g>
+                    href="{{ route('ren-rel-pem-afd.index') }}">
+                    <i class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-diagram-3" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd"
+                                d="M10 2a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM9 2a3 3 0 1 1 6 0 3 3 0 0 1-6 0zM1 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM0 6a3 3 0 1 1 6 0 3 3 0 0 1-6 0zM10 10a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM9 10a3 3 0 1 1 6 0 3 3 0 0 1-6 0zM5 6.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zM3.5 7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2a.5.5 0 0 1 .5-.5zm9 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2a.5.5 0 0 1 .5-.5z" />
                         </svg>
                     </i>
-                    <i class="sidenav-mini-icon"> A </i>
                     <span class="item-name">Afdeling</span>
                 </a>
             </li>
@@ -133,14 +232,13 @@
                 <a class="nav-link {{ activeRoute(route('ren-rel-pem-tt.index')) }}"
                     href="{{ route('ren-rel-pem-tt.index') }}">
                     <i class="icon">
-                        <svg class="icon-10" xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24"
-                            fill="currentColor">
-                            <g>
-                                <circle cx="12" cy="12" r="8" fill="currentColor"></circle>
-                            </g>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-calendar-event" viewBox="0 0 16 16">
+                            <path
+                                d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z" />
+                            <path d="M11 7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1z" />
                         </svg>
                     </i>
-                    <i class="sidenav-mini-icon"> T </i>
                     <span class="item-name">Tahun Tanam</span>
                 </a>
             </li>
@@ -148,14 +246,12 @@
                 <a class="nav-link {{ activeRoute(route('ren-rel-pem-jp.index')) }}"
                     href="{{ route('ren-rel-pem-jp.index') }}">
                     <i class="icon">
-                        <svg class="icon-10" xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24"
-                            fill="currentColor">
-                            <g>
-                                <circle cx="12" cy="12" r="8" fill="currentColor"></circle>
-                            </g>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-box-seam" viewBox="0 0 16 16">
+                            <path
+                                d="M8.5.134a.5.5 0 0 0-.5 0L1.5 3.134a.5.5 0 0 0-.5.866l6.5 3.5a.5.5 0 0 0 .5 0l6.5-3.5a.5.5 0 0 0-.5-.866L8.5.134zM1.5 4.5v7.866a.5.5 0 0 0 .5.866l6.5 3.5a.5.5 0 0 0 .5 0l6.5-3.5a.5.5 0 0 0 .5-.866V4.5l-6.5 3.5a.5.5 0 0 1-.5 0L1.5 4.5z" />
                         </svg>
                     </i>
-                    <i class="sidenav-mini-icon"> J </i>
                     <span class="item-name">Jenis Pupuk</span>
                 </a>
             </li>

@@ -6,12 +6,14 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JenisPupukController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PemupukanController;
+use App\Http\Controllers\PemupukanTbmController;
 use App\Http\Controllers\RencanaPemupukanController;
+use App\Http\Controllers\RencanaPemupukanTbmController;
 use App\Http\Controllers\RencanaRealisasiPemupukanAfdController;
-use App\Http\Controllers\RencanaRealisasiPemupukanTTController;
-use App\Http\Controllers\RencanaRealisasiPemupukanJPController;
 use App\Http\Controllers\RencanaRealisasiPemupukanController;
+use App\Http\Controllers\RencanaRealisasiPemupukanJPController;
 use App\Http\Controllers\RencanaRealisasiPemupukanKebunController;
+use App\Http\Controllers\RencanaRealisasiPemupukanTTController;
 use App\Http\Controllers\Security\PermissionController;
 use App\Http\Controllers\Security\RoleController;
 use App\Http\Controllers\Security\RolePermission;
@@ -86,6 +88,7 @@ Route::group(['middleware' => ['auth', 'cors']], function () {
     // input pemupukan routes
     Route::get('/input-pemupukan', [PemupukanController::class, 'create'])->name('input-pemupukan');
     Route::get('/rekap-pemupukan', [PemupukanController::class, 'index'])->name('rekap-pemupukan');
+    Route::get('/rekap-pemupukan-tbm', [PemupukanTbmController::class, 'index'])->name('rekap-pemupukan-tbm');
     Route::get('/chart-pemupukan', [PemupukanController::class, 'chart'])->name('chart-pemupukan');
     Route::post('/pemupukan/store', [PemupukanController::class, 'storePemupukan'])->name('pemupukan.store');
     Route::get('/pemupukan/create', [PemupukanController::class, 'create'])->name('pemupukan.create');
@@ -150,10 +153,28 @@ Route::group(['middleware' => ['auth', 'cors']], function () {
     Route::get('/api/tahuntanam/{regional}/{kebun}/{afdeling}', [PemupukanController::class, 'getDetailByTahunTanam']);
     Route::get('/api/detail/{regional}/{kebun}/{afdeling}/{blok}', [PemupukanController::class, 'getDetailByBlok']);
 
+    Route::get('/api/tbm/kebun/{regional}', [PemupukanTbmController::class, 'getKebunByRegional']);
+    Route::get('/api/tbm/afdeling/{regional}/{kebun}', [PemupukanTbmController::class, 'getAfdelingByKebun']);
+    Route::get('/api/tbm/blok/{regional}/{kebun}/{afdeling}', [PemupukanTbmController::class, 'getBlokByAfdeling']);
+    Route::get('/api/tbm/tahuntanam/{regional}/{kebun}/{afdeling}', [PemupukanTbmController::class, 'getDetailByTahunTanam']);
+    Route::get('/api/tbm/detail/{regional}/{kebun}/{afdeling}/{blok}', [PemupukanTbmController::class, 'getDetailByBlok']);
+
     //return data of jenis pupuk
     Route::get('/api/jenis-pupuk', [JenisPupukController::class, 'getJenisPupuk']);
 
     Route::get('/pemupukan/comparison/{regional}/{kebun?}/{afdeling?}/{tahun_tanam?}/{jenis_pupuk?}', [PemupukanController::class, 'getComparisonDataOfTheChart']);
+
+    // dashbaord tbm
+    Route::get('/dashboard-tbm', [HomeController::class, 'index'])->name('dashboard-tbm');
+
+    // pemupukan tbm
+    Route::get('/input-pemupukan-tbm', [PemupukanTbmController::class, 'create'])->name('input-pemupukan-tbm');
+    Route::resource('pemupukan-tbm', PemupukanTbmController::class);
+
+    Route::post('/pemupukan/tbm/store', [PemupukanTbmController::class, 'storePemupukanTbm'])->name('pemupukantbm.store');
+
+    // re
+    Route::resource('rencana-pemupukan-tbm', RencanaPemupukanTbmController::class);
 });
 
 //App Details Page => 'Dashboard'], function() {
