@@ -165,6 +165,7 @@ class PemupukanTbmController extends Controller
             ->where('afdeling', $afdeling)
             ->where('blok', $blok)
             ->first();
+
         return response()->json($detail);
     }
     public function getDetailByTahunTanam($regional, $kebun, $afdeling)

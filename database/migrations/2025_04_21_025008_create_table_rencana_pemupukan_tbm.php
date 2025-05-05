@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('rencana_pemupukan_tbm', function (Blueprint $table) {
             $table->id();
-            $table->integer('id_pupuk');
+            $table->unsignedBigInteger('id_pupuk');
+            $table->unsignedBigInteger('id_master_data_tbm');
             $table->string('regional');
             $table->string('kebun');
             $table->string('afdeling');
@@ -26,9 +27,15 @@ return new class extends Migration
             $table->string('luas_pemupukan');
             $table->string('bulan_tanam');
             $table->string('bahan_tanam');
-            
+            $table->year('tahun_pemupukan');
+            $table->enum('semester_pemupukan', [1, 2]);
+
             $table->timestamps();
             $table->softDeletes();
+            $table->foreign('id_pupuk')->references('id')->on('jenis_pupuk');
+            $table->foreign('id_master_data_tbm')->references('id')->on('master_data_tbm');
+
+
         });
     }
 

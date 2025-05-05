@@ -153,6 +153,7 @@ Route::group(['middleware' => ['auth', 'cors']], function () {
     Route::get('/api/tahuntanam/{regional}/{kebun}/{afdeling}', [PemupukanController::class, 'getDetailByTahunTanam']);
     Route::get('/api/detail/{regional}/{kebun}/{afdeling}/{blok}', [PemupukanController::class, 'getDetailByBlok']);
 
+http://127.0.0.1:8000/api/tbm/detail/DATIM/KEBUN%20JULOK%20RAYEUK%20SELATAN/AFD02/G.13
     Route::get('/api/tbm/kebun/{regional}', [PemupukanTbmController::class, 'getKebunByRegional']);
     Route::get('/api/tbm/afdeling/{regional}/{kebun}', [PemupukanTbmController::class, 'getAfdelingByKebun']);
     Route::get('/api/tbm/blok/{regional}/{kebun}/{afdeling}', [PemupukanTbmController::class, 'getBlokByAfdeling']);
@@ -165,7 +166,7 @@ Route::group(['middleware' => ['auth', 'cors']], function () {
     Route::get('/pemupukan/comparison/{regional}/{kebun?}/{afdeling?}/{tahun_tanam?}/{jenis_pupuk?}', [PemupukanController::class, 'getComparisonDataOfTheChart']);
 
     // dashbaord tbm
-    Route::get('/dashboard-tbm', [HomeController::class, 'index'])->name('dashboard-tbm');
+    Route::get('/dashboard-tbm', [HomeController::class, 'indexTBM'])->name('dashboard-tbm');
 
     // pemupukan tbm
     Route::get('/input-pemupukan-tbm', [PemupukanTbmController::class, 'create'])->name('input-pemupukan-tbm');

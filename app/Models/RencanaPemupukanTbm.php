@@ -33,8 +33,10 @@ class RencanaPemupukanTbm extends Model
         'jumlah_pokok',
         'jenis_pupuk',
         'jumlah_pupuk',
-        'luas_pemupukan', // kilogram pupuk
+        'luas_pemupukan',
         'bulan_tanam',
         'bahan_tanam',
+        'tahun_pemupukan',
+        'semester_pemupukan',
     ];
 }
