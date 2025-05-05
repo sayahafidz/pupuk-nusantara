@@ -2,6 +2,7 @@
 
 // Controllers
 
+use App\Http\Controllers\DashboardTbmController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JenisPupukController;
 use App\Http\Controllers\MasterDataController;
@@ -166,8 +167,9 @@ http://127.0.0.1:8000/api/tbm/detail/DATIM/KEBUN%20JULOK%20RAYEUK%20SELATAN/AFD0
     Route::get('/pemupukan/comparison/{regional}/{kebun?}/{afdeling?}/{tahun_tanam?}/{jenis_pupuk?}', [PemupukanController::class, 'getComparisonDataOfTheChart']);
 
     // dashbaord tbm
-    Route::get('/dashboard-tbm', [HomeController::class, 'indexTBM'])->name('dashboard-tbm');
-
+    Route::get('/dashboard-tbm', [DashboardTbmController::class, 'indexTBM'])->name('dashboard-tbm');
+    Route::get('/dashboard-tbm-detail/{regional}/{jenis}', [DashboardTbmController::class, 'getDetailTBM']);
+    Route::get('/dashboard-tbm-afdeling/{regional}/{kebun}/{jenis}', [DashboardTbmController::class, 'getAfdelingDetailTBM']);
     // pemupukan tbm
     Route::get('/input-pemupukan-tbm', [PemupukanTbmController::class, 'create'])->name('input-pemupukan-tbm');
     Route::resource('pemupukan-tbm', PemupukanTbmController::class);
